@@ -1,3 +1,5 @@
+
+
 require("coffee-script/register")
 
 class PackageManager
@@ -18,7 +20,7 @@ class ExtensionManager
   addFilesFromPath: (root) ->
     return unless @xiki.exists root
 
-    for name in @xiki.walk(root)
+    #for name in @xiki.walk(root)
       # do something
 
 

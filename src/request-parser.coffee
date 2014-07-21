@@ -1,16 +1,68 @@
 # A XikiRequest contains a sequence of XikiPath objects.  Each XikiPath object
 # defines a context, which is the context for next XikiPath object.
 
-class XikiRequest
-  constructor: ({@body, @nodePaths, @input, @action}) ->
+{EventEmitter} = require "events"
 
-  open: ->
-  close: ->
-  expanded: ->
-  complete: ->
+class XikiRequest extends EventEmitter
+  constructor: (opts) ->
+    {@body, @nodePaths, @args, @action, @req, @res} = opts
+    {@before, @after, @prefix} = opts
+    @input = @body
+
+  getContext: (context, xikiPath) ->
+    debugger
+    unless xikiPath
+      for xikiPath in @nodePaths
+        context = @getContext context, xikiPath
+      return context
+    else
+      for ContextClass in context.contexts()
+        ctx = new ContextClass()
+        if ctx.does this, xikiPath
+          return ctx.getContext()
+
+    return context
+
+  # returns context, such that you can react on its result
+  process: (context, respond) ->
+    @context = @getContext context
+    @respond = respond
+
+    try
+      result = @context[@action](this)
+    catch err
+      respond(err)
+
+    unless result is undefined
+      @respond result
+
 
 class XikiPath
   constructor: (@nodePath) ->
+
+  # return the first portion of path
+  first: -> @nodePath[0].name
+
+  slice: (args...) ->
+    new XikiPath @nodePath.slice args...
+
+  unshift: (thing)->
+    if thing instanceof Array
+      @nodePath.unshift new PathFragment thing...
+    else if typeof thing is "string"
+      @nodePath.unshift new PathFragment thing
+    else if thing instanceof PathFragment
+      @nodePath.unshift thing
+    else
+      throw "cannot unshift thing: #{thing}"
+
+  shift: -> @[1..]
+
+  empty: -> @nodePath.length == 0
+
+  toPath: ->
+    (frag.name for frag in @nodePath).join("/")
+
 
 
 STRING      = /(\\.|[^"\\]+)*/
@@ -19,12 +71,12 @@ BULLET      = /[\-–—+]\s/
 CONTEXT     = /[@$]/
 NODE_LINE_1 = /(\s*)@\s*(.*)/
 INDENT      = /^[ \t]*/
-FREE_LINE   = /(\s*)(^\-–—+].*)/
+FREE_LINE   = /(\s*)([^\-–—+].*)/
 NODE_LINE_COMMENT = /^(.*)\s+(?:--|—|–|\#)\s+.*$/
 PATH_SEP    = /(?:\/| -> | → )/
 BUTTON      = /^(\s*)\[(\w+)\](?:\s+\[\w+\])*\s*$/
 
-{get_indent} = require "./util"
+{getIndent} = require "./util"
 
 
 
@@ -33,7 +85,7 @@ match_tree_line = (s) ->
   if m = NODE_LINE_1.exec(s)
     return  indent: m[1], ctx: "@", node: [ m[2] ]
 
-  r = indent: get_indent(s), ctx: null
+  r = indent: getIndent(s), ctx: null
   if m = NODE_LINE_COMMENT.exec(s)
     s = m[1]
 
@@ -46,8 +98,6 @@ match_tree_line = (s) ->
       r.node = [ s ]
       return r
     return null
-
-  debugger
 
   if s[0] == "@"
     s = s[1...].replace(/^\s+/, '')
@@ -79,6 +129,25 @@ match_tree_line = (s) ->
 
   return r
 
+parseXikiPath = (path) ->
+  np  = path.split /\//
+  nodePath = []
+  nodePaths = [nodePath]
+
+  for p,i in np
+    if p[...2] == "$ "
+      nodePaths.push [ new PathFragment np[i..].join "/" ]
+      break
+
+    if p[0] == "@"
+      nodePath = [ new PathFragment p[1..] ]
+      nodePaths.push nodePath
+      continue
+
+    nodePath.push new PathFragment p
+
+  nodePaths
+
 class PathFragment
   constructor: (@name, @position=0) ->
 
@@ -88,15 +157,27 @@ class PathFragment
     else
       @name
 
-parseXikiRequest = (path, body) ->
-  return parseXikiPathFromTree(body) unless path
+parseXikiRequest = (request) ->
+  {path, body, action, args, req, res} = request
 
-  request = []
+  input = body || null
+  action = action || "expand"
+  # request root menu
+  if request.path is ""
+    nodePaths = [ new PathFragment "" ]
+    new XikiRequest {body, nodePaths, input, action, args, req, res}
+  else
+    unless request.path
+      parseXikiPathFromTree(request)
+    else
+      nodePaths = parseXikiPath(path)
+      new XikiRequest {body, nodePaths, input, action, args, req, res}
 
-  return new XikiRequest path: request, input: body
 
+parseXikiRequestFromTree = ({path, body, action, req, res}) ->
 
-parseXikiRequestFromTree = (body) ->
+  action = null unless action
+
   lines         = body.split /\n/
   node_path     = []
   node_paths    = [ node_path ]
@@ -105,7 +186,6 @@ parseXikiRequestFromTree = (body) ->
   lines         = body.replace(/\s+$/, '') + "\n"
   collect_lines = false
   input         = null
-  action        = null
 
   for line in lines.split(/\n/).reverse().concat [null]
     #
@@ -205,10 +285,10 @@ parseXikiRequestFromTree = (body) ->
 
   node_paths.reverse()
 
-  console.log "node_paths:", node_paths
   nodePaths = (new XikiPath(p) for p in node_paths)
 
-  return new XikiRequest {body, nodePaths, input, action}
+  return new XikiRequest {body, nodePaths, input, action, req, res}
 
 
-module.exports = {match_tree_line, parseXikiRequestFromTree}
+module.exports = {match_tree_line, parseXikiRequest, parseXikiPath,
+  parseXikiRequestFromTree}

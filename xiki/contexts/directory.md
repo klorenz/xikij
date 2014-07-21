@@ -1,8 +1,8 @@
-Directory
-=========
 
-This context lets you browse directory trees.  Commands exectued in this
-context are run in current directory as working directory.
+This context lets you browse directory
+trees.  Commands exectued in this context
+are run in current directory as working
+directory.
 
 - ``/`` -- for root
 - ``~/`` -- for home directory
@@ -10,7 +10,7 @@ context are run in current directory as working directory.
 - ``~PROJECT_NAME/`` -- for current project
 
 ```coffee
-  class Directory extends XikiContext
+  xiki.use class Directory extends xiki.Context
     PS1 = "  $ "
 
     rootMenuItems: ->
