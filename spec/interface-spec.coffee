@@ -1,4 +1,4 @@
-InterfaceClass = require "../src/interface"
+InterfaceClass = require "../lib/interface"
 
 describe "Interface", ->
   it "should be used to define interfaces", ->

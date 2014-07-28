@@ -7,7 +7,10 @@ class Package extends EventEmitter
     unless @name
       @name = path.basename(@dir)
 
-    @dir += "/xiki"
+    # TODO try also .xikij
+
+
+    @dir += "/xikij"
     @modules = []
     @errors = null
 
@@ -85,7 +88,7 @@ class PackageManager extends EventEmitter
     result = []
     for pkg in @_packages
       for m in pkg.modules
-        result.push m.xikiModule
+        result.push m
     result
 
 module.exports = {Package, PackageManager}

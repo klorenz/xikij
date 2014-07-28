@@ -1,18 +1,16 @@
-{Xiki} = require '../src/xiki'
+{Xikij} = require '../lib/xikij'
 
 path = require "path"
 _ = require 'underscore'
 
-
-
-describe "Xiki", ->
+describe "Xikij", ->
 
   it "should trigger 'loaded' event for packages", ->
     loadedHook = jasmine.createSpy("loadedHook")
     initializedHook = jasmine.createSpy("initializedHook")
     initialized = false
 
-    xiki = new Xiki()
+    xiki = new Xikij()
     xiki.packages.on "loaded", ->
       loadedHook()
 
@@ -32,32 +30,47 @@ describe "Xiki", ->
   describe "when xiki object has been created", ->
 
     it "should have loaded basic package", ->
-      xiki = new Xiki()
+      xiki = new Xikij()
 
       xiki.packages.on "loaded", ->
 
         expect( (pkg.asObject('dir', 'name') for pkg in xiki.packages.all()) ).toEqual [
-          dir: path.resolve(__dirname, "..", "xiki"), name: "xikijs"
+          dir: path.resolve(__dirname, "..", "xikij"), name: "xikij"
           ]
 
         expect( (pkg.asObject('dir', 'name', 'errors') for pkg in xiki.packages.failed()) ).toEqual []
 
         expect( (m.moduleName for m in xiki.packages.modules()).sort() )
-          .toEqual ["xikijs-directory", "xikijs-execution", "xikijs-ssh"]
+          .toEqual [
+            "xikij/amazon"
+            "xikij/bookmarklet"
+            "xikij/contexts/directory"
+            "xikij/contexts/execution"
+            "xikij/contexts/menu"
+            "xikij/contexts/root"
+            "xikij/contexts/ssh"
+            "xikij/hostname"
+            "xikij/ip"
+          ]
+
+        expect( (n for [n,c] in xiki.contexts(named: true)) ).toEqual [
+          "Directory"
+          "Execution"
+          "Menu"
+        ]
 
       xiki.initialize()
 
   describe "when you request a xiki response", ->
     describe "when passing a path", ->
       it "should handle the path", ->
-        xiki = new Xiki()
+        xiki = new Xikij()
         requestResponded = false
         os = require "os"
 
         runs ->
           xiki.request {path: "/hostname"}, (response) ->
-            response.getResult (result) ->
-              expect(result).toBe os.hostname()
+            expect(response.data).toBe os.hostname()
 
             requestResponded = true
 

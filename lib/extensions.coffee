@@ -40,19 +40,19 @@ module.exports =
 
 
     loadCoffeeScript: (code, xikiData) ->
-      filename = xikiData.filename
+      filename = xikiData.fileName
 
       o = {filename, sourceMap: on}
 
       o.bare = on # ensure return value
       answer = coffeescript.compile code, o
 
-      _globals =
-        xiki: @xiki
-        modulename: xikiData.moduleName
-        xikiModule: xikiData
+      # context =
+      #   xiki: @xiki
+      #   modulename: xikiData.moduleName
+      #   xikiModule: xikiData
 
-      @runJavaScript answer.js, filename, _globals
+      @runJavaScript answer.js, filename, xikiData
 
 
     handleError: (pkg, moduleName, error) ->
@@ -79,6 +79,7 @@ module.exports =
         sourceFile: sourceFile
         fileName:   sourceFile
         moduleName: moduleName
+        menuName:   name
         package:    pkg
 
       text = null
@@ -91,7 +92,7 @@ module.exports =
 
             for k,v of context
               if util.isSubClass(v, @xiki.Context)
-                xiki.addContext(k,v)
+                @xiki.addContext(k,v)
 
           catch error
             @handleError pkg, moduleName, error
@@ -112,43 +113,79 @@ module.exports =
                 pkg.modules.push @loadCoffeeScript code, xikiData
 
               catch error
-                @handleError pkg, error
+                @handleError pkg, moduleName, error
 
               done()
       else
         done()
 
-    runJavaScript: (js, filename, context) ->
+    runJavaScript: (js, filename, context, sourceMap) ->
       # TODO
       # idea is to run each part by part.  maybe md5 hashed names, each part
       # is executed in same context, each part may be different language
       # which compiles to javascript
 
-      sandbox = vm.createContext(context)
-      sandbox.GLOBAL = sandbox.root = sandbox.global = sandbox
-      sandbox.__filename = filename
-      sandbox.__dirname = path.dirname filename
-
       Module = require 'module'
-      sandbox.module  = _module  = new Module(context.modulename || 'eval')
-      sandbox.require = _require = (path) ->  Module._load path, _module, true
-      _module.filename = sandbox.__filename
-      _require[r] = require[r] for r in Object.getOwnPropertyNames require when r isnt 'paths'
 
-      # use the same hack node currently uses for their own REPL
-      _require.paths = _module.paths = Module._nodeModulePaths process.cwd()
-      _require.resolve = (request) -> Module._resolveFilename request, _module
+      if true
+        #funcname = "xikij$"+context.moduleName.replace( /\W+/g, "$" )
 
-      if sandbox.xikiModule
-        sandbox.xikiModule.sandbox = sandbox
+        vars  = "var menu = this, xikiMenu = this, xikiModule = this";
 
-      result = vm.runInContext js, sandbox, filename
+        # TODO add source map
+        # use http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/
+        # sourceMappingURL=path/to/map.file
+        # may also be a inline data:... url see compile-cache of atom
 
-      delete sandbox.GLOBAL
-      delete sandbox.global
-      delete sandbox.root
+        # put a wrapping function for providing the xiki
+        script = """
+          module.exports = { module: module, modfunc: function (xiki, module) { var xiki = xiki, module = module; #{vars}; #{js}
+          } }
+        """
 
-      sandbox
+        filename = @xiki.cacheFile context.moduleName+".js", script
+
+        #if filename in cache remove from module cache
+        exported = require filename
+        context.result = exported.modfunc.call context, @xiki
+
+        # module.exports may be mutated
+
+        context
+
+      else
+        script = createScript """
+          function(xiki, module, requir){ #{js} }
+        """
+        sandbox = vm.createContext(context)
+        sandbox.GLOBAL = sandbox.root = sandbox.global = sandbox
+        sandbox.__filename = filename
+        sandbox.__dirname = path.dirname filename
+        sandbox.console = console
+
+        sandbox.module  = _module  = new Module(context.modulename || 'eval')
+        sandbox.require = _require = (path) ->  Module._load path, _module, true
+        _module.filename = sandbox.__filename
+        _require[r] = require[r] for r in Object.getOwnPropertyNames require when r isnt 'paths'
+
+        # use the same hack node currently uses for their own REPL
+        _require.paths = _module.paths = Module._nodeModulePaths process.cwd()
+        _require.resolve = (request) -> Module._resolveFilename request, _module
+
+        if sandbox.xikiModule
+          sandbox.xikiModule.sandbox = sandbox
+
+        debugger
+
+        result = vm.runInContext js, sandbox, filename
+
+        delete sandbox.GLOBAL
+        delete sandbox.global
+        delete sandbox.root
+        delete sandbox.console
+
+        sandbox
+
 
 
 exports.eval = (code, options = {}) ->

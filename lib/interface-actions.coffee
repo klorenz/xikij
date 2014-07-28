@@ -10,6 +10,8 @@ module.exports = (Interface) ->
 
     complete: (req) -> @context.complete req
 
+    isAction: (name) -> name in ['expand', 'collapse', 'expanded', 'complete']
+
 
   Interface.default class Actions extends Actions
 

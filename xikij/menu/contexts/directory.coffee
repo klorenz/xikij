@@ -1,23 +1,27 @@
-doc = """
+@doc = """
   This context lets you browse directory
   trees.  Commands executed in this context
   are run in current directory as working
   directory.
 
-  - ``/`` -- for root
-  - ``~/`` -- for home directory
-  - ``./`` -- for directory of current view
-  - ``~PROJECT_NAME/`` -- for current project
+  - / -- for root
+  - ~/ -- for home directory
+  - ./ -- for directory of current view
+  - ~PROJECT_NAME/ -- for current project
   """
 
-class Directory extends xiki.Context
+class @Directory extends xiki.Context
   PS1 = "  $ "
 
   rootMenuItems: ->
     # where to get project paths? Environment?
     @projectDirs().concat ["~/", "./", "/"]
 
-  does: (xikiPath) ->
+  does: (xikiRequest, xikiPath) ->
+
+    console.log "xikiRequest", xikiRequest
+    console.log "xikiPath", xikiPath
+
     p = xikiPath.toPath()
     p = @shellExpand(p).replace "\\", "/"
     p = p.split('/')

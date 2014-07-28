@@ -1,7 +1,7 @@
-docs = """
+@docs = """
   Print hostname of machine running xiki-Ray
   """
 
-menu = ->
+@menu = ->
   os = require "os"
   os.hostname()

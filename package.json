@@ -2,7 +2,7 @@
   "name": "xikij",
   "version": "0.0.0",
   "description": "a Xiki clone",
-  "main": "lib/xiki.js",
+  "main": "lib/main.js",
   "scripts": {
     "test": "cake test",
     "prepublish": "cake build"

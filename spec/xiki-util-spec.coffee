@@ -1,4 +1,4 @@
-util = require "../src/util"
+util = require "../lib/util"
 
 describe "Xiki Utilities", ->
   describe "when you need line's indentation", ->

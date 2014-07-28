@@ -1,4 +1,4 @@
-exports =
+module.exports =
   class Context
 
     NAME: null

@@ -1,4 +1,4 @@
-rp = require "../src/request-parser.coffee"
+rp = require "../lib/request-parser.coffee"
 
 describe "Request Parser", ->
   describe "match_tree_line", ->
@@ -84,5 +84,3 @@ describe "Request Parser", ->
           input: null
           action: null
         }.toString()
-
-    

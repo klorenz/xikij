@@ -24,3 +24,4 @@ module.exports = (Interface) ->
     .load("./interface-namespace")
     .load("./interface-filesystem")
     .load("./interface-actions")
+    .load("./interface-env")

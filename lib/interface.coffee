@@ -29,8 +29,10 @@ class Interface
         continue if name is "constructor"
 
         if typeof target is "function"
+          continue if name of target::
           target::[name] = method
         else
+          continue if target[name]
           target[name] = method
 
     target

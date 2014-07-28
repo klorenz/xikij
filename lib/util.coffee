@@ -35,6 +35,31 @@ module.exports =
   getIndent: (line) ->
     return INDENT.exec(line)[0]
 
+  startsWith: (subject, string) ->
+    return false if subject.length < string.length
+    return subject[...string.length] == string
+
+  endsWith: (subject, string) ->
+    return false if subject.length < string.length
+    return subject[-string.length..] == string
+
+  strip: (s) -> s.replace(/^\s+/, '').replace(/\s+$/, '')
+
+  StringReader: class StringReader extends stream.Readable
+    constructor: (@subject) ->
+      unless Buffer.isBuffer(@subject)
+        @subject = new Buffer(@subject)
+
+    pipe: (stream)->
+      stream.write(@subject)
+      stream
+
+  consumeStream: (stream, callback) ->
+    result = ""
+    stream
+      .on "data", (data) -> result += data.toString()
+      .on "end", -> callback(result)
+
   cookCoffee: (content, done) ->
     lines = content.toString().split(/\n/)
     isCoffee = false

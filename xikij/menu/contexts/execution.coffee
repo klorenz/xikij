@@ -1,4 +1,4 @@
-class Execution extends xiki.Context
+class @Execution extends xiki.Context
   PATTERN = /^\s*\$\s+(.*)/
   PS1 = "$ "
 
@@ -27,7 +27,7 @@ class Execution extends xiki.Context
 
     return result
 
-  open: ->
+  expand: ->
     command = @mob[1]
     return "" if /^\s*$/.test command
 
@@ -36,4 +36,4 @@ class Execution extends xiki.Context
     unless cmd
       return @context.executeShell command
     else
-      return @context.execute cmd... input
+      return @context.execute cmd...

@@ -35,6 +35,8 @@ module.exports = (Interface) ->
     # remove
     remove:    (args...) -> @context.remove args...
 
+    isAbs: (args...) -> @context.isAbs args...
+
   Interface.default class FileSystem extends FileSystem
     #
     # All methods of FileSystem interface can work in synchronous or asynchronous
@@ -239,3 +241,6 @@ module.exports = (Interface) ->
 
     getcwd: ->
       return path.resolve(".")
+
+    isAbs: (dir)->
+      path.resolve(dir) is dir
