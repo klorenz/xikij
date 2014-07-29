@@ -29,6 +29,8 @@ module.exports = (Interface) ->
 
     makeDirs:  (args...) -> @context.makeDirs args...
 
+    listDir:   (args...) -> @context.listDir args...
+
     # create a temporary file
     tempFile:  (args...) -> @context.tempFile args...
 
@@ -147,19 +149,21 @@ module.exports = (Interface) ->
         return stat.isDirectory()
 
     readDir: (dir, callback) ->
-      obj = this
-      handleEntries = (entries) ->
+      handleEntries = (entries) =>
+        result = []
         for e in entries
-          if obj.isdir path.join(dir, e)
-            "#{e}/"
+          if @isDirectory path.join(dir, e)
+            result.push "#{e}/"
           else
-            e
+            result.push e
+
+        result
 
       if callback
-        fs.readdir dir, (entries) ->
+        fs.readdir dir, (entries) =>
           callback handleEntries entries
 
-      entries = fs.readdirSync
+      entries = fs.readdirSync dir
       handleEntries entries
 
     exists: (filename) -> fs.existsSync(filename)

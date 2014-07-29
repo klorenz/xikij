@@ -14,7 +14,6 @@ class Request extends EventEmitter
       @nodePaths = {}
 
   getContext: (context, xikiPath) ->
-    debugger
     unless xikiPath
       for xikiPath, i in @nodePaths
         context = @getContext context, xikiPath

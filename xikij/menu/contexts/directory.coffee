@@ -20,11 +20,6 @@ class @Directory extends xiki.Context
     @projectDirs().concat ["~/", "./", "/"]
 
   does: (xikiRequest, xikiPath) ->
-    debugger
-
-    console.log "xikiRequest", xikiRequest
-    console.log "xikiPath", xikiPath
-
     p = xikiPath.toPath()
     p = @shellExpand(p).replace "\\", "/"
     p = p.split('/')
@@ -67,7 +62,7 @@ class @Directory extends xiki.Context
 
     return true
 
-  open: ->
+  expand: ->
     if @filePath
       lines = @openFile @filePath
 
@@ -77,6 +72,6 @@ class @Directory extends xiki.Context
 
         return lines.replace /^/m, "| "
     else
-      return ("+ #{entry}\n" for entry in @listDir(@cwd)).join('')
+      return @readDir @cwd
 
   getCwd: -> @cwd

@@ -18,14 +18,13 @@ class Response
         type = "array"
 
         result = ""
-        for s in data
+        for s in x
           if typeof s is "object"
-            result = response.data
-            break
+            return type
           else
             result += "+ #{s}\n"
-
-            return type
+        @data = result
+        return "string"
 
     return type
 
