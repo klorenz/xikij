@@ -34,7 +34,7 @@ module.exports = (Interface) ->
         opts = {}
 
       unless 'cwd' of opts
-        opts.cwd = @getcwd()
+        opts.cwd = @getCwd()
 
       unless 'env' of opts
         opts.env = {}

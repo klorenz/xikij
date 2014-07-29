@@ -32,7 +32,7 @@ module.exports =
         done() if filesToProcess == 0
 
       @xiki.walk dir, (entry) =>
-        console.log "entry", entry
+        #console.log "entry", entry
         filesToProcess++
         @loadModule dir, pkg, entry[dir.length+1...], fileProcessed
 

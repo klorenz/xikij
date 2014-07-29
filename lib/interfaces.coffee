@@ -25,3 +25,4 @@ module.exports = (Interface) ->
     .load("./interface-filesystem")
     .load("./interface-actions")
     .load("./interface-env")
+    .load("./interface-contexts")

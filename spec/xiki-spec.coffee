@@ -89,6 +89,18 @@ describe "Xikij", ->
             requestResponded = true
         waitsFor (-> requestResponded), "xiki command has responded", 1000
 
+      it "can run commands in contexts", ->
+        xikij = new Xikij()
+        requestResponded = false
+        runs ->
+          xikij.request {path: '/tmp/$ pwd'}, (response) ->
+            expect(response.type).toBe "stream"
+            consumeStream response.data, (result) ->
+              expect(result).toBe "/tmp\n"
+            requestResponded = true
+        waitsFor (-> requestResponded), "xiki command has responded", 1000
+
+
 
     describe "passing no path, but a body", ->
     describe "passing no path, but a body and parameters", ->

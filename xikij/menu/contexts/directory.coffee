@@ -10,6 +10,8 @@
   - ~PROJECT_NAME/ -- for current project
   """
 
+path = require "path"
+
 class @Directory extends xiki.Context
   PS1 = "  $ "
 
@@ -18,6 +20,7 @@ class @Directory extends xiki.Context
     @projectDirs().concat ["~/", "./", "/"]
 
   does: (xikiRequest, xikiPath) ->
+    debugger
 
     console.log "xikiRequest", xikiRequest
     console.log "xikiPath", xikiPath
@@ -29,13 +32,13 @@ class @Directory extends xiki.Context
     @fileName = null
     @filePath = null
 
-    fsRoot = p[2..].join("/")
+    fsRoot = p[...2].join("/")
 
     if @isAbs fsRoot
       @cwd = fsRoot
       p = p[2..]
     else if p[0] == '.'
-      @cwd = @getCwd()
+      @cwd = @context.getCwd()
       p = p[1..]
     else if p[0] == '~'
       @cwd = @shellExpand("~")
@@ -55,7 +58,9 @@ class @Directory extends xiki.Context
 
     @cwd = path.join.apply undefined, [ @cwd ].concat p
 
-    unless @isDir @cwd
+    return false unless @context.exists @cwd
+
+    unless @context.isDirectory @cwd
       @filePath = @cwd
       @cwd = path.dirname(@cwd)
       @fileName = path.basename(@filePath)
@@ -74,9 +79,4 @@ class @Directory extends xiki.Context
     else
       return ("+ #{entry}\n" for entry in @listDir(@cwd)).join('')
 
-  execute: (opts) ->
-    opts ?= {}
-    {cwd} = opts
-    unless cwd
-      opts.cwd = @cwd
-    @context.execute opts
+  getCwd: -> @cwd

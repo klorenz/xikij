@@ -90,7 +90,6 @@ class SelectFromText extends stream.Transform
 
   _transform: (@chunk, @encoding, @done) ->
     if @finished
-      @push null
       return @done()
 
     @start = 0
@@ -123,7 +122,6 @@ class SelectFromText extends stream.Transform
     @done()
 
   myFinish: ->
-    console.log "pushing null"
     @push null
     @finished = true
     @done()

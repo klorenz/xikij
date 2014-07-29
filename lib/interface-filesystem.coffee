@@ -7,8 +7,8 @@ module.exports = (Interface) ->
 
   Interface.define class FileSystem
 
-    isdir:     (args...) -> @context.isdir args...
-    readdir:   (args...) -> @context.readdir args...
+    isDirectory: (args...) -> @context.isDirectory args...
+    readDir:   (args...) -> @context.readDir args...
     exists:    (args...) -> @context.exists args...
 
     # walk path
@@ -25,12 +25,12 @@ module.exports = (Interface) ->
     readFile:  (args...) -> @context.readFile args...
 
     # return current working directory
-    getcwd:    (args...) -> @context.getcwd args...
+    getCwd:    (args...) -> @context.getCwd args...
 
-    makedirs:  (args...) -> @context.makedirs args...
+    makeDirs:  (args...) -> @context.makeDirs args...
 
     # create a temporary file
-    tempfile:  (args...) -> @context.tempfile args...
+    tempFile:  (args...) -> @context.tempFile args...
 
     # remove
     remove:    (args...) -> @context.remove args...
@@ -42,7 +42,7 @@ module.exports = (Interface) ->
     # All methods of FileSystem interface can work in synchronous or asynchronous
     # mode.  If a callback given, automatically the asynchronous version is done.
     #
-    tempfile: (name, content, options, callback) ->
+    tempFile: (name, content, options, callback) ->
       if typeof options is "function"
         callback = options
         options = {}
@@ -52,7 +52,6 @@ module.exports = (Interface) ->
         @on 'shutdown', => @remove @tmpdir
 
       filename = path.join(@tmpdir, name)
-      console.log filename
 
       if callback
         myCallback = (err) ->
@@ -66,20 +65,19 @@ module.exports = (Interface) ->
       filename
 
     cacheFile: (name, content, options, callback) ->
-      @tempfile(name, content, options, callback)
+      @tempFile(name, content, options, callback)
 
-    makedirs: (dir) ->
+    makeDirs: (dir) ->
       dirParts = dir.split("/")
       for d,i in dirParts
         continue if i is 0
         d = dirParts[..i].join("/")
-        console.log "d", d
         fs.mkdirSync(d) unless fs.existsSync(d)
 
     writeFile: (filename, content, options, callback) ->
       dirname = path.dirname(filename)
       unless @exists dirname
-        @makedirs dirname
+        @makeDirs dirname
 
       options = options or {}
 
@@ -148,7 +146,7 @@ module.exports = (Interface) ->
         stat = fs.statSync filename
         return stat.isDirectory()
 
-    readdir: (dir, callback) ->
+    readDir: (dir, callback) ->
       obj = this
       handleEntries = (entries) ->
         for e in entries
@@ -239,7 +237,7 @@ module.exports = (Interface) ->
       stat = fs.statSync(filename)
       return stat.mtime
 
-    getcwd: ->
+    getCwd: ->
       return path.resolve(".")
 
     isAbs: (dir)->

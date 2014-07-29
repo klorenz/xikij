@@ -8,6 +8,8 @@ CoffeeScript = require "coffee-script"
 XikiExtensions = require './extensions'
 {XikijClient} = require "./client"
 
+util = require "./util"
+
 {Response} = require "./response"
 _ = require "underscore"
 #XikiContext    = require './context'
@@ -100,19 +102,6 @@ class Xikij extends EventEmitter
       respond response
 
 
-  contexts: (objects) ->
-    named = objects?.named? ? false
-
-    if named
-      [name, @_context[name]] for name in @_contexts
-    else
-      @_context[name] for name in @_contexts
-
-  addContext: (name, ctx) ->
-    if not (name in @_contexts)
-      @_contexts.push name
-    @_context[name] = ctx
-
   # TODO make ctx reloadable/overridable
 
   getSearchPath: (type) ->
@@ -129,3 +118,4 @@ module.exports =
 
   Xikij: Xikij
   XikijClient: XikijClient
+  util: util

@@ -18,7 +18,7 @@ class @Execution extends xiki.Context
     cmd = parseCommand(command)
 
     output = stream.PassThrough()
-    opts = {}
+    opts = { cwd: @context.getCwd() }
 
     unless cmd
       p = @context.executeShell command, opts

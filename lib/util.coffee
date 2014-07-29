@@ -79,8 +79,29 @@ module.exports =
       stream.write(@subject)
       stream
 
+  Indenter: class Indenter extends stream.Transform
+    constructor: ({@indent}) ->
+      super()
+      @firstLine = true
+      unless @indent
+        @indent = ""
+
+    _transform: (chunk, encoding, done) ->
+      if @firstLine
+        if @indent
+          @push @indent
+        @firstLine = false
+
+      @push chunk.toString().replace /\n(?!$)/g, "\n#{@indent}"
+      done()
+
+  indented: (thing, indent) ->
+    if thing instanceof stream.Readable
+      thing.pipe(new Indenter({indent}))
+    else
+      indent + thing.toString().replace /\n(?!$)/g, "\n#{indent}"
+
   consumeStream: (stream, callback) ->
-    debugger
     result = ""
     stream
       .on "data", (data) -> result += data.toString()
