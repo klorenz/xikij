@@ -20,6 +20,12 @@ module.exports =
     PATTERN: null
 
     does: (xikiRequest, xikiPath) ->
+      if @PATTERN?
+        m = @PATTERN.exec xikiPath.toPath()
+        if m
+          @mob = m
+          return true
+
       return false unless xikiPath
 
       # mob contains match object from @PATTERN

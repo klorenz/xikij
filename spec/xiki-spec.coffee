@@ -1,4 +1,5 @@
 {Xikij} = require '../lib/xikij'
+{consumeStream} = require "../lib/util"
 
 path = require "path"
 _ = require 'underscore'
@@ -62,19 +63,32 @@ describe "Xikij", ->
       xiki.initialize()
 
   describe "when you request a xiki response", ->
-    describe "when passing a path", ->
+    describe "when passing 'path'", ->
+
       it "should handle the path", ->
-        xiki = new Xikij()
+        xikij = new Xikij()
         requestResponded = false
         os = require "os"
 
         runs ->
-          xiki.request {path: "/hostname"}, (response) ->
+          xikij.request {path: "/hostname"}, (response) ->
             expect(response.data).toBe os.hostname()
 
             requestResponded = true
 
         waitsFor (-> requestResponded), "xiki has responded", 1000
+
+      it "can run commands", ->
+        xikij = new Xikij()
+        requestResponded = false
+        runs ->
+          xikij.request {path: '$ echo "hello world"'}, (response) ->
+            expect(response.type).toBe "stream"
+            consumeStream response.data, (result) ->
+              expect(result).toBe "hello world\n"
+            requestResponded = true
+        waitsFor (-> requestResponded), "xiki command has responded", 1000
+
 
     describe "passing no path, but a body", ->
     describe "passing no path, but a body and parameters", ->

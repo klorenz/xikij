@@ -1,3 +1,6 @@
+child_process = require 'child_process'
+os = require 'os'
+
 module.exports = (Interface) ->
   # ## ProgramExecution Interface
   #
@@ -32,3 +35,20 @@ module.exports = (Interface) ->
 
       unless 'cwd' of opts
         opts.cwd = @getcwd()
+
+      unless 'env' of opts
+        opts.env = {}
+        for k,v of process.env
+          unless k of opts.env
+            opts.env[k] = v
+
+      child_process.spawn args[0], args[1..], opts
+
+    executeShell: (args...) ->
+      switch os.platform()
+        when 'win32'
+          @execute.apply this, ["cmd", "/c"].concat args
+        else
+          @execute.apply this, ["bash", "-c"].concat args
+
+      # 'darwin', 'freebsd', 'linux', 'sunos' or 'win32'

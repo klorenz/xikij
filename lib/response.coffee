@@ -27,6 +27,8 @@ class Response
 
             return type
 
+    return type
+
   # toString: ->
   #   if @type
 

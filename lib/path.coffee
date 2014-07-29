@@ -266,7 +266,6 @@ class SelectFromText extends stream.Transform
       return true
 
     if line[0] in ["-", "@"]
-      debugger
       return true if indent.length > curInd.length
 
       command = null

@@ -81,6 +81,7 @@ module.exports =
         moduleName: moduleName
         menuName:   name
         package:    pkg
+        require: (name) -> require "#{__dirname}/#{name}"
 
       text = null
 
@@ -174,8 +175,6 @@ module.exports =
 
         if sandbox.xikiModule
           sandbox.xikiModule.sandbox = sandbox
-
-        debugger
 
         result = vm.runInContext js, sandbox, filename
 

@@ -1,39 +1,31 @@
+{parseCommand} = @require "util"
+stream = require "stream"
+
 class @Execution extends xiki.Context
-  PATTERN = /^\s*\$\s+(.*)/
   PS1 = "$ "
 
-  COMMAND_RE = ///
-    (?:^|\s+)
-    (?:
-      ("(?:\\.|[^"\\]+)*")
-      | ('(?:\\.|[^'\\]+)*')
-      | (\S+)
-    )
-    ///
+  does: (xikiRequest, xikiPath) ->
+    xp = xikiPath.toPath()
+    m = /^\s*\$\s+(.*)/.exec(xp)
+    return false unless m
+    @mob = m
+    return true
 
-  parseCommand: (s) ->
-    result = []
-    isShellCommand = false
-    for m in s.split @COMMAND_RE
-      continue if m is undefined
-      continue if m == ""
-      if m[0] == '"' and m[-1..] == '"'
-        result.push m[1...-1].replace('\\\\', '\\').replace('\\"', '"')
-      else if m[0] == "'" and m[-1..] == "'"
-        result.push m[1...-1].replace('\\\\', '\\').replace('\\"', '"')
-      else
-        return null if /(^[|<>]$|^[12]>|`)/.test m
-        result.push m
-
-    return result
-
-  expand: ->
+  expand: (req) ->
     command = @mob[1]
     return "" if /^\s*$/.test command
 
-    cmd = @parseCommand(command)
+    cmd = parseCommand(command)
+
+    output = stream.PassThrough()
+    opts = {}
 
     unless cmd
-      return @context.executeShell command
+      p = @context.executeShell command, opts
     else
-      return @context.execute cmd...
+      p = @context.execute (cmd.concat [ opts ])...
+
+    p.stdout.pipe(output)
+    p.stderr.pipe(output)
+
+    output

@@ -45,6 +45,31 @@ module.exports =
 
   strip: (s) -> s.replace(/^\s+/, '').replace(/\s+$/, '')
 
+  parseCommand: (s) ->
+    result = []
+    isShellCommand = false
+    commandRegex = ///
+      (?:^|\s+)
+      (?:
+        ("(?:\\.|[^"\\]+)*")
+        | ('(?:\\.|[^'\\]+)*')
+        | (\S+)
+      )
+      ///
+    for m in s.split commandRegex
+      continue if m is undefined
+      continue if m == ""
+      if m[0] == '"' and m[-1..] == '"'
+        result.push m[1...-1].replace('\\\\', '\\').replace('\\"', '"')
+      else if m[0] == "'" and m[-1..] == "'"
+        result.push m[1...-1].replace('\\\\', '\\').replace('\\"', '"')
+      else
+        return null if /(^[|<>]$|^[12]>|`)/.test m
+        result.push m
+
+    return result
+
+
   StringReader: class StringReader extends stream.Readable
     constructor: (@subject) ->
       unless Buffer.isBuffer(@subject)
@@ -55,6 +80,7 @@ module.exports =
       stream
 
   consumeStream: (stream, callback) ->
+    debugger
     result = ""
     stream
       .on "data", (data) -> result += data.toString()

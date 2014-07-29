@@ -49,6 +49,14 @@ describe "Xiki Utilities", ->
         - second
         """+"\n"
 
+    describe "parseCommand", ->
+      it "parses space separated command", ->
+        expect util.parseCommand "hello world and else"
+          .toEqual [ "hello", "world", "and", "else"]
+      it "parses strings as arguments", ->
+        expect util.parseCommand 'echo "hello world"'
+          .toEqual [ "echo", "hello world"]
+
     describe "can handle a complex menu", ->
       util.cookCoffee """
         This is an example of embedded coffee script.

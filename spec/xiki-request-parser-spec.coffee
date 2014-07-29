@@ -24,10 +24,15 @@ describe "Request Parser", ->
 
     describe "when it is a xiki reference", ->
       it "has ctx @", ->
+        expected = {
+            indent: ""
+            ctx: "@"
+            node: ["path/to/foo"]
+          }
         expect rp.match_tree_line("@ path/to/foo")
-          .toBe ""
+          .toEqual expected
         expect rp.match_tree_line("- @path/to/foo")
-          .toBe ""
+          .toEqual expected
 
     describe "when it is a command", ->
       it "has ctx $", ->
