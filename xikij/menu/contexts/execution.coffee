@@ -28,4 +28,6 @@ class @Execution extends xiki.Context
     p.stdout.pipe(output)
     p.stderr.pipe(output)
 
+    # we could p.on "close" -> output.write("[error: returned x]") or emit a special event on output
+
     output

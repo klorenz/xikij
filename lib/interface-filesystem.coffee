@@ -1,7 +1,8 @@
-path = require 'path'
-os   = require 'os'
-uuid = require 'uuid'
-fs   = require 'fs'
+path   = require 'path'
+os     = require 'os'
+uuid   = require 'uuid'
+fs     = require 'fs'
+stream = require 'stream'
 
 module.exports = (Interface) ->
 
@@ -19,6 +20,8 @@ module.exports = (Interface) ->
 
     # write content to file at path
     writeFile: (args...) -> @context.writeFile args...
+
+    openFile: (args...) -> @context.openFile args...
 
     # read first count bytes/chars from file.  if no count given, return entire
     # content
@@ -91,6 +94,26 @@ module.exports = (Interface) ->
         fs.writeFile(filename, content, options, callback)
       else
         fs.writeFileSync(filename, content, options)
+
+    openFile: (filename) ->
+      class BinaryChecker extends stream.Transform
+        constructor: (@filename) ->
+          super()
+          @first = true
+
+        _transform: (chunk, encoding, done) ->
+          if @first
+            for c,i in chunk
+              if c < 7 or (c > 13 and c < 27) or (c < 32 and c > 27)
+                e = new Error("File is Binary: #{@filename}")
+                e.filename = filename
+                throw e
+
+            @first = false
+          @push chunk
+          done()
+
+      fs.createReadStream(filename).pipe(new BinaryChecker(filename))
 
     readFile: (filename, options, callback) ->
       options = options or {}

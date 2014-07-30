@@ -9,34 +9,43 @@
 
 STRING      = /(\\.|[^"\\]+)*/
 INDEX       = /\[(\d+)\](?=\/|$)/
-BULLET      = /[\-–—+]\s/
+BULLET      = /^[\-–—+]\s/
 CONTEXT     = /[@$]/
 NODE_LINE_1 = /(\s*)@\s*(.*)/
 INDENT      = /^[ \t]*/
 FREE_LINE   = /(\s*)([^\-–—+].*)/
-NODE_LINE_COMMENT = /^(.*)\s+(?:--|—|–|\#)\s+.*$/
+NODE_LINE_PROMPT_COMMENT = /^(\s*\$.*)\s+(?:—|–|\#)\s+.*$/
+NODE_LINE_COMMENT = /^(\s*(?!\$).*)\s+(?:--|—|–|\#)\s+.*$/
 PATH_SEP    = /(?:\/| -> | → )/
 BUTTON      = /^(\s*)\[(\w+)\](?:\s+\[\w+\])*\s*$/
 
-{getIndent} = require "./util"
+{getIndent, strip} = require "./util"
 
 
-match_tree_line = (s) ->
+matchTreeLine = (s) ->
   r = {}
   if m = NODE_LINE_1.exec(s)
-    return  indent: m[1], ctx: "@", node: [ m[2] ]
+    return  indent: m[1], ctx: "@", node: m[2]
 
   r = indent: getIndent(s), ctx: null
   if m = NODE_LINE_COMMENT.exec(s)
+    s = m[1]
+  if m = NODE_LINE_PROMPT_COMMENT.exec(s)
     s = m[1]
 
   s = s.replace(/^\s+/, '').replace(/\s+$/, '')
 
   if BULLET.test(s)
-    s = s.slice(1).replace(/^\s+/, '')
+    s = s[1..].replace(/^\s+/, '')
   else unless CONTEXT.test(s[0])
     unless r.indent
-      r.node = [ s ]
+      if s[-1..] == "/"
+        s = s[...-1]
+        r.node = s.split PATH_SEP
+  #      r.node[r.node.length-1] += "/"
+      else
+        r.node = s.split PATH_SEP
+#     r.node = [ s ]
       return r
     return null
 
@@ -81,7 +90,7 @@ parseXikiPath = (path) ->
       break
 
     if p[0] == "@"
-      nodePath = [ new PathFragment p[1..] ]
+      nodePath = [ new PathFragment strip p[1..] ]
       nodePaths.push nodePath
       continue
 
@@ -105,7 +114,6 @@ parseXikiRequest = (request) ->
     else
       nodePaths = (new Path(p) for p in parseXikiPath(path))
       new Request {body, nodePaths, input, action, args, req, res}
-
 
 parseXikiRequestFromTree = ({path, body, action, req, res}) ->
 
@@ -158,7 +166,7 @@ parseXikiRequestFromTree = ({path, body, action, req, res}) ->
         collect_lines = true
         continue
 
-    mob = match_tree_line line
+    mob = matchTreeLine line
 
     unless mob
       if indent is null
@@ -172,19 +180,27 @@ parseXikiRequestFromTree = ({path, body, action, req, res}) ->
     unless line_stripped
       continue
 
+    if mob.ctx is "@"
+      more_node_paths = parseXikiPath(mob.node)
+      node_paths[-1..] = more_node_paths[0]
+      if more_node_paths.length > 1
+        node_paths.push mode_node_paths[1..]...
+
+      continue
+
     _indent = mob.indent
 
     s = mob.node[0]
     nodes = mob.node[1..]
 
-    for n in nodes
+    for n in nodes.reverse()
       node_path.push new PathFragment(n)
 
     if indent is null
       indent = _indent
-      break unless s
-
       node_path.push new PathFragment(s)
+
+      break unless s
 
       if mob.ctx
         node_path = []
@@ -223,5 +239,5 @@ parseXikiRequestFromTree = ({path, body, action, req, res}) ->
   return new Request {body, nodePaths, input, action, req, res}
 
 
-module.exports = {match_tree_line, parseXikiRequest, parseXikiPath,
+module.exports = {matchTreeLine, parseXikiRequest, parseXikiPath,
   parseXikiRequestFromTree}

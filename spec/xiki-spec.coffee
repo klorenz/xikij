@@ -93,14 +93,12 @@ describe "Xikij", ->
         xikij = new Xikij()
         requestResponded = false
         runs ->
-          xikij.request {path: '/tmp/$ pwd'}, (response) ->
+          xikij.request {body: "#{__dirname}\n  $ pwd\n"}, (response) ->
             expect(response.type).toBe "stream"
             consumeStream response.data, (result) ->
-              expect(result).toBe "/tmp\n"
+              expect(result).toBe "#{__dirname}\n"
             requestResponded = true
         waitsFor (-> requestResponded), "xiki command has responded", 1000
-
-
 
     describe "passing no path, but a body", ->
     describe "passing no path, but a body and parameters", ->

@@ -63,14 +63,15 @@ class @Directory extends xiki.Context
     return true
 
   expand: ->
+    debugger
     if @filePath
-      lines = @openFile @filePath
+      return @openFile @filePath
 
-      if lines
-        unless typeof lines == "string"
-          lines = lines.join('')
-
-        return lines.replace /^/m, "| "
+      # if lines
+      #   unless typeof lines == "string"
+      #     lines = lines.join('')
+      #
+      #   return lines.replace /^/m, "| "
     else
       return @readDir @cwd
 
