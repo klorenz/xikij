@@ -1,6 +1,6 @@
 {
   "name": "xikij",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "a Xiki clone",
   "main": "lib/main.js",
   "scripts": {
