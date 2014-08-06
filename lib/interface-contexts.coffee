@@ -1,14 +1,22 @@
+Q = require "q"
+
 module.exports = (Interface) ->
   Interface.define class Contexts
     # ### expand
     #
-    contexts: (args...) -> @context.contexts args...
+    getContexts: (args...) -> @context.contexts args...
 
     addContext: (args...) -> @context.addContext args...
 
+    getContextClass: -> Q.fcall =>
+      if "Context" of this
+        @Context
+      else
+        @context.getContextClass()
+
   Interface.default class Contexts extends Contexts
 
-    contexts: (objects) ->
+    getContexts: (objects) -> Q.fcall =>
       named = objects?.named? ? false
 
       if named

@@ -1,13 +1,21 @@
 util = require "../lib/util"
 
 describe "Xiki Utilities", ->
-  describe "when you need line's indentation", ->
-    it "provides getIndent function", ->
+  it "can extract indentation of text", ->
       expect(util.getIndent("")).toBe ""
       expect(util.getIndent("\n")).toBe ""
       expect(util.getIndent("foo\n")).toBe ""
       expect(util.getIndent("  foo\n")).toBe "  "
       expect(util.getIndent(" \tfoo\n")).toBe " \t"
+
+  it "can indent text", ->
+    expect(util.indented("foo\nbar\n", "  ")).toBe "  foo\n  bar\n"
+
+  it "can remove indentation from text", ->
+    expect(util.removeIndent("  first\n    second\n  third\n", "  ")).toBe "first\n  second\nthird\n"
+
+    # just to make clear that this function only removes indentation and does
+    expect(util.removeIndent("  first\n    second\nthird\n", "  ")).toBe "first\n  second\nthird\n"
 
   describe "when you make result ready for output", ->
     it "handles numbers", ->

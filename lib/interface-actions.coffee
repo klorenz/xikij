@@ -1,3 +1,5 @@
+Q = require "q"
+
 module.exports = (Interface) ->
   Interface.define class Actions
     # ### expand
@@ -15,10 +17,10 @@ module.exports = (Interface) ->
 
   Interface.default class Actions extends Actions
 
-    expand: (req) -> ""
+    expand:   (req) -> Q.fcall -> ""
 
-    collapse: (req) -> null
+    collapse: (req) -> Q.fcall -> null
 
     expanded: (req) -> @expand req
 
-    complete: (req) -> null
+    complete: (req) -> Q.fcall -> null

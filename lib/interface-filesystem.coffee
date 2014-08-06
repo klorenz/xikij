@@ -3,6 +3,7 @@ os     = require 'os'
 uuid   = require 'uuid'
 fs     = require 'fs'
 stream = require 'stream'
+Q      = require "q"
 
 module.exports = (Interface) ->
 
@@ -47,10 +48,8 @@ module.exports = (Interface) ->
     # All methods of FileSystem interface can work in synchronous or asynchronous
     # mode.  If a callback given, automatically the asynchronous version is done.
     #
-    tempFile: (name, content, options, callback) ->
-      if typeof options is "function"
-        callback = options
-        options = {}
+    tempFile: (name, content, options) ->
+      options = {} unless options
 
       unless @tmpdir
         @tmpdir = path.join (os.tmpdir or os.tmpDir)(), uuid.v4()
@@ -58,42 +57,45 @@ module.exports = (Interface) ->
 
       filename = path.join(@tmpdir, name)
 
-      if callback
-        myCallback = (err) ->
-          callback(err, filename)
-      else
-        myCallback = null
-
       if content or content is ""
-        @writeFile filename, content, options, myCallback
+        deferred = Q.defer()
+        @writeFile filename, content, options, (err) =>
+          if err
+            deferred.reject new Error(err)
+          else
+            deferred.resolve filename
 
-      filename
+        deferred.promise
+      else
+        Q.fcall -> filename
 
-    cacheFile: (name, content, options, callback) ->
-      @tempFile(name, content, options, callback)
+    cacheFile: (name, content, options) ->
+      @tempFile(name, content, options)
 
-    makeDirs: (dir) ->
+    makeDirs: (dir) -> Q.fcall ->
       dirParts = dir.split("/")
       for d,i in dirParts
         continue if i is 0
         d = dirParts[..i].join("/")
         fs.mkdirSync(d) unless fs.existsSync(d)
 
-    writeFile: (filename, content, options, callback) ->
+    writeFile: (filename, content, options) ->
       dirname = path.dirname(filename)
-      unless @exists dirname
-        @makeDirs dirname
-
       options = options or {}
 
-      if typeof options is "function"
-        callback = options
-        options = {}
+      @exists(dirname).then (exists) ->
+        return if exists
+        @makeDirs(dirname).then ->
+          deferred = Q.defer()
 
-      if callback
-        fs.writeFile(filename, content, options, callback)
-      else
-        fs.writeFileSync(filename, content, options)
+          fs.writeFile filename, content, options, (err) ->
+            if err
+              deferred.reject new Error(err)
+            else
+              deferred.resolve()
+
+          deferred.promise
+
 
     openFile: (filename) ->
       class BinaryChecker extends stream.Transform
@@ -113,66 +115,53 @@ module.exports = (Interface) ->
           @push chunk
           done()
 
-      fs.createReadStream(filename).pipe(new BinaryChecker(filename))
+      Q.when filename, (filename) -> fs.createReadStream(filename).pipe(new BinaryChecker(filename))
 
-    readFile: (filename, options, callback) ->
+    readFile: (filename, options) ->
       options = options or {}
+      deferred = Q.defer()
 
-      if typeof options is "function"
-        callback = options
-        options = {}
+      if options.count
+        fs.open filename, "r", (err, fd) =>
+          return callback err if err
 
-      if callback
-        if options.count
-          fs.open filename, "r", (err, fd) =>
-            return callback err if err
-
-            count = options.count
-            buf = new Buffer(count)
-            totalRead = 0
-
-            reader = (err, bytesRead, buffer) =>
-              if err
-                fs.close fd
-                callback err, buffer
-              else
-                totalRead += bytesRead
-                if totalRead < count
-                  fs.read fd, buf, totalRead, count - totalRead, totalRead, reader
-                else
-                  fs.close fd, ->
-                    callback err, buffer
-
-            reader null, 0, buf
-        else
-          fs.readFile filename, options, callback
-      else
-        if options.count
-          fd = fs.openSync filename, "r"
           count = options.count
           buf = new Buffer(count)
-
           totalRead = 0
-          while totalRead < count
-            totalRead += fs.readSync fd, buf, totalRead, count-totalRead, totalRead
 
-          fs.closeSync(fd)
+          reader = (err, bytesRead, buffer) =>
+            if err
+              fs.close fd, ->
+                deferred.reject new Error(err)
+            else
+              totalRead += bytesRead
+              if totalRead < count
+                fs.read fd, buf, totalRead, count - totalRead, totalRead, reader
+              else
+                fs.close fd, ->
+                  deferred.resolve(buffer)
 
-          return buf
-
-        else
-          fs.readFileSync filename, options
-
-    isDirectory: (filename, callback) ->
-      if callback
-        fs.stat filename, (stat) ->
-          callback stat.isDirectory()
+          reader null, 0, buf
       else
-        stat = fs.statSync filename
-        return stat.isDirectory()
+        fs.readFile filename, options, (err, buffer) ->
+          if err
+            deferred.reject(err)
+          else
+            deferred.resolve(buffer)
 
-    readDir: (dir, callback) ->
-      handleEntries = (entries) =>
+      deferred.promise
+
+    isDirectory: (filename) ->
+      deferred = Q.defer()
+      fs.stat filename, (stat) ->
+        deferred.resolve stat.isDirectory()
+
+      deferred.promise
+
+    readDir: (dir) ->
+      deferred = Q.defer()
+
+      fs.readdir dir, (entries) =>
         result = []
         for e in entries
           if @isDirectory path.join(dir, e)
@@ -180,16 +169,12 @@ module.exports = (Interface) ->
           else
             result.push e
 
-        result
+        Q.resolve result
 
-      if callback
-        fs.readdir dir, (entries) =>
-          callback handleEntries entries
+      deferred.promise
 
-      entries = fs.readdirSync dir
-      handleEntries entries
-
-    exists: (filename) -> fs.existsSync(filename)
+    exists: (filename) ->
+      Q.fcall -> fs.existsSync(filename)
 
     # ## walk(dir, fileFunc, [ dirFunc,] [ options ])
     #
@@ -205,6 +190,9 @@ module.exports = (Interface) ->
     #       (fn) -> fs.unlinkSync(fn),
     #       (dn) -> -> fs.rmdirSync(dn)
     # ```
+    #
+    # should return a promise for running functions
+    # on all entries
     #
     walk: (dir, fileFunc, dirFunc, options) ->
       options = options or {}
@@ -223,6 +211,7 @@ module.exports = (Interface) ->
         dirCallback = dirFunc dir
         return unless dirCallback
 
+      promises = []
       for e in fs.readdirSync dir
         continue if e in exclude
 
@@ -230,42 +219,47 @@ module.exports = (Interface) ->
         stat = fs.statSync(filename)
 
         if stat.isDirectory()
-          @walk filename, fileFunc, dirFunc, options
+          promises.push @walk filename, fileFunc, dirFunc, options
         else
-          fileFunc filename, stat, dir, e
+          promises.push Q.when fileFunc(filename, stat, dir, e), (value) => value
 
-      if typeof dirCallback is "function"
-        dirCallback()
+      Q.all(promises).then (results) ->
+        if typeof dirCallback is "function"
+          dirCallback()
 
-    remove: (filename, callback) ->
-      if @isDirectory filename
-        rmtree = ->
-          try
-            @walk filename,
-              (fn) -> fs.unlinkSync(fn),
-              (dn) -> -> fs.rmdirSync(dn)
-            if callback
-              callback()
-          catch err
-            if callback
-              callback(err)
+        return results
 
-        if callback
+    remove: (filename) ->
+      deferred = Q.defer()
+
+      @isDirectory(filename).then (isdir) =>
+        if isdir
+          rmtree = ->
+            try
+              @walk filename,
+                (fn) -> fs.unlinkSync(fn),
+                (dn) -> -> fs.rmdirSync(dn)
+
+              deferred.resolve(true)
+            catch err
+              deferred.reject(err)
+
           setTimeout rmtree, 1
         else
-          rmtree()
-      else
-        if callback
-          fs.unlink filename, callback
-        else
-          fs.unlinkSync filename
+          fs.unlink filename, (err) ->
+            if err
+              deferred.reject new Error(err)
+            else
+              deferred.resolve(true)
 
-    getmtime: (filename) ->
+      deferred.promise
+
+    getMTime: (filename) ->
       stat = fs.statSync(filename)
-      return stat.mtime
+      Q.fcall -> stat.mtime
 
     getCwd: ->
-      return path.resolve(".")
+      Q.fcall -> path.resolve(".")
 
-    isAbs: (dir)->
-      path.resolve(dir) is dir
+    isAbs: (dir) ->
+      Q.fcall -> path.resolve(dir) == dir

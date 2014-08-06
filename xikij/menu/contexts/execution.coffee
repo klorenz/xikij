@@ -12,6 +12,7 @@ class @Execution extends xiki.Context
     return true
 
   expand: (req) ->
+    debugger
     command = @mob[1]
     return "" if /^\s*$/.test command
 
@@ -27,6 +28,10 @@ class @Execution extends xiki.Context
 
     p.stdout.pipe(output)
     p.stderr.pipe(output)
+
+    if req.input
+      p.stdin.write(req.input)
+      p.stdin.end()
 
     # we could p.on "close" -> output.write("[error: returned x]") or emit a special event on output
 

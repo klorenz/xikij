@@ -1,5 +1,6 @@
 path = require "path"
 {EventEmitter} = require "events"
+Q = require "q"
 
 class Package extends EventEmitter
 
@@ -14,17 +15,9 @@ class Package extends EventEmitter
     @modules = []
     @errors = null
 
-  loaded: (name, doneEvent) ->
-    unless doneEvent
-      doneEvent = "package-loaded"
-
-    if name
-      index = @loading.indexOf name
-      if index > -1
-        @loading = @loading.splice index, 1
-
-    unless @loading.length
-      @emit doneEvent
+  load: (xikij) ->
+    debugger
+    xikij.moduleLoader.load this
 
   asObject: (attributes...)->
     obj = {}
@@ -39,30 +32,30 @@ class Package extends EventEmitter
 
 
 class PackageManager extends EventEmitter
-  constructor: (@xiki) ->
+  constructor: (@xikij) ->
     @_packages = []
     @loading = []
+    #@loaded =  # be a promise
+
+  loaded: ->
+    Q.all(@loading).then (result) =>
+      return result
 
   add: (dir, name) ->
     pkg = new Package dir, name
 
-    @loading.push pkg.name
-
-    # pkg.on "package-loaded", =>
-    #   pkg.loaded.apply this, [pkg.name, "loaded"]
-    #   @emit "package-loaded", pkg
+    @loading.push pkg.load @xikij
 
     @_packages.push pkg
 
-    packageLoaders = @listeners("load-package").length
-    console.log "packageLoaders #{packageLoaders}"
-
-    @emit "load-package", pkg, =>
-      packageLoaders--
-      console.log "packageLoaders #{packageLoaders}"
-      unless packageLoaders
-        console.log "emit loaded"
-      @emit "loaded" unless packageLoaders
+    # packageLoaders = @listeners("load-package").length
+    # console.log "packageLoaders #{packageLoaders}"
+    #
+    #
+    #
+    # @emit "load-package", pkg, =>
+    #   packageLoaders--
+    #   @emit "loaded" unless packageLoaders
 
   all: -> @_packages
 

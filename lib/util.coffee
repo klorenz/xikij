@@ -35,6 +35,13 @@ module.exports =
   getIndent: (line) ->
     return INDENT.exec(line)[0]
 
+  removeIndent: (text, indent=null) ->
+    unless indent?
+      indent = INDENT.exec(line)[0]
+
+    rx     = new RegExp("^#{indent}", "mg")
+    text.replace rx, ""
+
   startsWith: (subject, string) ->
     return false if subject.length < string.length
     return subject[...string.length] == string

@@ -37,6 +37,12 @@ class Path
 
   shift: -> @[1..]
 
+  at: (index, value) ->
+    if typeof value is string
+      @nodePath[index].name == value
+    else
+      @nodePath[index].name
+
   empty: -> @nodePath.length == 0
 
   toPath: ->
@@ -170,7 +176,6 @@ class SelectFromText extends stream.Transform
         @wasEmpty = false
     else
       if isEmpty line
-        console.log "pushing EOL"
         return @push "\n"
 
       indent = getIndent line

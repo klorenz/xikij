@@ -19,7 +19,7 @@ NODE_LINE_COMMENT = /^(\s*(?!\$).*)\s+(?:--|—|–|\#)\s+.*$/
 PATH_SEP    = /(?:\/| -> | → )/
 BUTTON      = /^(\s*)\[(\w+)\](?:\s+\[\w+\])*\s*$/
 
-{getIndent, strip} = require "./util"
+{getIndent, removeIndent, strip} = require "./util"
 
 
 matchTreeLine = (s) ->
@@ -104,7 +104,8 @@ parseXikiRequest = (request) ->
 
   input = body || null
   action = action || "expand"
-  # request root menu
+
+  # eequest root menu
   if path is ""
     nodePaths = [ new Path([ new PathFragment "" ]) ]
     new Request {body, nodePaths, input, action, args, req, res}
@@ -115,20 +116,29 @@ parseXikiRequest = (request) ->
       nodePaths = (new Path(p) for p in parseXikiPath(path))
       new Request {body, nodePaths, input, action, args, req, res}
 
-parseXikiRequestFromTree = ({path, body, action, req, res}) ->
+parseXikiRequestFromTree = ({path, body, action, args}) ->
+
+  console.log "args", args
 
   action = null unless action
+  input  = null
+  lines  = (body.replace(/\s+$/, '')+"\n").split(/\n/)
 
-  lines         = body.split /\n/
+  if args
+    if 'line' of args
+      input = removeIndent(lines[args.line+1..].join("\n"))
+      lines = lines[..args.line]
+
+  console.log "input", input
+  console.log "lines", lines
+
   node_path     = []
   node_paths    = [ node_path ]
   old_line      = null
   indent        = null
-  lines         = body.replace(/\s+$/, '') + "\n"
   collect_lines = false
-  input         = null
 
-  for line in lines.split(/\n/).reverse().concat [null]
+  for line in lines.reverse().concat [null]
     #
     # There may be contined lines
     #
@@ -155,7 +165,7 @@ parseXikiRequestFromTree = ({path, body, action, req, res}) ->
         input.push line
         continue
 
-      input = unindent(input.join(''))
+      input = removeIndent(input.join(''))
       collect_lines = false
       indent = null
 
@@ -236,7 +246,7 @@ parseXikiRequestFromTree = ({path, body, action, req, res}) ->
 
   nodePaths = (new Path(p) for p in node_paths)
 
-  return new Request {body, nodePaths, input, action, req, res}
+  return new Request {body, nodePaths, input, action}
 
 
 module.exports = {matchTreeLine, parseXikiRequest, parseXikiPath,

@@ -1,5 +1,6 @@
 child_process = require 'child_process'
 os = require 'os'
+Q = require "q"
 
 module.exports = (Interface) ->
   # ## ProgramExecution Interface
@@ -33,16 +34,19 @@ module.exports = (Interface) ->
         args.push opts
         opts = {}
 
+      promises = []
       unless 'cwd' of opts
-        opts.cwd = @getCwd()
+        promises.push @getCwd().then (cwd) => opts.cwd = cwd
 
       unless 'env' of opts
         opts.env = {}
-        for k,v of process.env
-          unless k of opts.env
-            opts.env[k] = v
+        promises.push @getEnv().then (env) ->
+          for k,v of env
+            unless k of opts.env
+              opts.env[k] = v
 
-      child_process.spawn args[0], args[1..], opts
+      Q.allSettled(promises).then ->
+        child_process.spawn args[0], args[1..], opts
 
     executeShell: (args...) ->
       switch os.platform()

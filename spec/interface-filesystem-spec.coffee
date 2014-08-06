@@ -31,8 +31,11 @@ describe "Interface Filesystem", ->
       expect(files).toEqual ["file1.txt", "file2.txt", "folder1/sub2/z.md"]
 
     it "can read a file synchronously", ->
-      expect fs.readFile(path.resolve(fixture, "file1.txt")).toString()
-        .toBe "content of file1\n"
+      content = null
+
+      waitsForPromise ->
+        fs.readFile(path.resolve(fixture, "file1.txt")).then (buffer) ->
+          expect(buffer.toString()).toBe "content of file1\n"
 
     it "can read a file asynchronously", ->
       fs.readFile path.resolve(fixture, "file1.txt"), (err, content) ->

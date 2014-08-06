@@ -5,13 +5,16 @@ CoffeeScript = require "coffee-script"
 
 
 {EventEmitter} = require 'events'
-XikiExtensions = require './extensions'
 {XikijClient} = require "./client"
+
+{ModuleLoader} = require "./extensions"
 
 util = require "./util"
 
 {Response} = require "./response"
 _ = require "underscore"
+
+Q = require "q"
 #XikiContext    = require './context'
 
 issubclass = (B, A) -> B.prototype instanceof A
@@ -39,31 +42,23 @@ class Xikij extends EventEmitter
 
     # first initialize packages
     @packages   = new PackageManager this
-    @extensions = new XikiExtensions this
+    @moduleLoader = new ModuleLoader this
+#    @extensions = new XikiExtensions this
 
     @opts = opts
 
+    @initialized = false
+
     # initialized method has been triggered
-    @_initialized = false
-    @_packages_loaded = false
+#    @_initialized = false
+#    @_packages_loaded = false
 
 
   mixInterfacesInto: (target) ->
     @Interface.mixInto target
 
-  _announce_initialized: ->
-    if @_initialized and @_initializing and @_packages_loaded
-      @_initializing = false
-      @emit "initialized"
-
   initialize: (opts) ->
-    return if @_initialized
-    return if @_initializing
-    @_initializing = true
-
-    @packages.on "loaded", =>
-      @_packages_loaded = true
-      @_announce_initialized()
+    return @initialized if @initialized
 
     opts = opts or {}
     _.extend @opts, opts
@@ -81,25 +76,28 @@ class Xikij extends EventEmitter
         for e in entries
           @packages.add path.join(p, e)
 
-    @_initialized = true
+    @packages.loaded().fail (err) => console.log err
+
 
   # respond gets a Response object, which contains a type and a stream
   request: ({path, body, args, action, context}, respond) ->
+    @initialized = @initialize() unless @initialized
 
-    unless @_initialized
-      @on "initialized", =>
-        @request {path, body, args, action, context}, respond
-      return @initialize()
+    @initialized.then =>
 
-    {parseXikiRequest} = require "./request-parser"
-    request = parseXikiRequest {path, body, args, action}
+      {parseXikiRequest} = require "./request-parser"
+      request = parseXikiRequest {path, body, args, action}
 
-    context = this unless context
+      context = this unless context
 
-    request.process context, (response) ->
-      unless response instanceof Response
-        response = new Response data: response
-      respond response
+      request.process context, (response) ->
+        unless response instanceof Response
+          response = new Response data: response
+
+        if respond
+          respond response
+
+        Q.fcall -> response
 
 
   # TODO make ctx reloadable/overridable

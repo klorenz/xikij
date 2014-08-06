@@ -12,7 +12,8 @@
     "url": "git@github.com:klorenz/xikij"
   },
   "keywords": [
-    "xiki", "xikij"
+    "xiki",
+    "xikij"
   ],
   "author": "Kay-Uwe (Kiwi) Lorenz <kay@moduleworks.com> (http://quelltexter.com)",
   "license": "ISC",
@@ -29,6 +30,7 @@
     "jasmine-node": "^1.14.3",
     "mongodb": "^1.4.7",
     "morgan": "~1.0.0",
+    "q": "^1.0.1",
     "underscore": "^1.6.0",
     "uuid": "^1.4.1"
   }

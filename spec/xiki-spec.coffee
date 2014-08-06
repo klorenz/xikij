@@ -6,7 +6,7 @@ _ = require 'underscore'
 
 describe "Xikij", ->
 
-  it "should trigger 'loaded' event for packages", ->
+  fit "should trigger 'loaded' event for packages", ->
     loadedHook = jasmine.createSpy("loadedHook")
     initializedHook = jasmine.createSpy("initializedHook")
     initialized = false
