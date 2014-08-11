@@ -6,34 +6,43 @@ _ = require 'underscore'
 
 describe "Xikij", ->
 
-  fit "should trigger 'loaded' event for packages", ->
-    loadedHook = jasmine.createSpy("loadedHook")
-    initializedHook = jasmine.createSpy("initializedHook")
-    initialized = false
+  it "should load packages", ->
 
-    xiki = new Xikij()
-    xiki.packages.on "loaded", ->
-      loadedHook()
+    xikij = new Xikij()
+    xikij.initialize()
 
-    xiki.on "initialized", ->
-      expect(loadedHook).toHaveBeenCalled()
-      initializedHook()
-      initialized = true
+    waitsForPromise ->
+      xikij.packages.loaded()
 
-    runs ->
-      xiki.initialize()
-
-    waitsFor (-> initialized), "xiki has been initialized", 1000
-
-    runs ->
-      expect(initializedHook).toHaveBeenCalled()
-
+  # fit "should trigger 'loaded' event for packages", ->
+  #   loadedHook = jasmine.createSpy("loadedHook")
+  #   initializedHook = jasmine.createSpy("initializedHook")
+  #   initialized = false
+  #
+  #   xiki = new Xikij()
+  #
+  #   # xiki.packages.on "loaded", ->
+  #   #   loadedHook()
+  #   #
+  #   # xiki.on "initialized", ->
+  #   #   expect(loadedHook).toHaveBeenCalled()
+  #   #   initializedHook()
+  #   #   initialized = true
+  #
+  #   runs ->
+  #     xiki.initialize()
+  #
+  #   waitsFor (-> initialized), "xiki has been initialized", 1000
+  #
+  #   runs ->
+  #     expect(initializedHook).toHaveBeenCalled()
+  #
   describe "when xiki object has been created", ->
 
     it "should have loaded basic package", ->
       xiki = new Xikij()
 
-      xiki.packages.on "loaded", ->
+      xiki.packages.loaded().then ->
 
         expect( (pkg.asObject('dir', 'name') for pkg in xiki.packages.all()) ).toEqual [
           dir: path.resolve(__dirname, "..", "xikij"), name: "xikij"
@@ -65,40 +74,49 @@ describe "Xikij", ->
   describe "when you request a xiki response", ->
     describe "when passing 'path'", ->
 
-      it "should handle the path", ->
+      doPromisedRequest = (xikij, request, callback) ->
+        waitsForPromise ->
+          promise = xikij.request(request)
+          promise
+            .then callback
+            .fail (error) -> throw error
+
+      it "should handle the path with callback", ->
         xikij = new Xikij()
         requestResponded = false
         os = require "os"
 
         runs ->
           xikij.request {path: "/hostname"}, (response) ->
-            expect(response.data).toBe os.hostname()
-
+            expect(response.data).toEqual os.hostname()
             requestResponded = true
 
-        waitsFor (-> requestResponded), "xiki has responded", 1000
+        waitsFor (-> requestResponded), "xiki command has responded", 1000
+
+      it "should handle the path with promise", ->
+        xikij = new Xikij()
+        os = require "os"
+
+        doPromisedRequest xikij, {path: "/hostname"}, (response) ->
+          console.log "--- got", response
+          expect(response.data).toEqual os.hostname()
 
       it "can run commands", ->
         xikij = new Xikij()
         requestResponded = false
-        runs ->
-          xikij.request {path: '$ echo "hello world"'}, (response) ->
-            expect(response.type).toBe "stream"
-            consumeStream response.data, (result) ->
-              expect(result).toBe "hello world\n"
-            requestResponded = true
-        waitsFor (-> requestResponded), "xiki command has responded", 1000
+
+        doPromisedRequest xikij, {path: '$ echo "hello world"'}, (response) ->
+          expect(response.type).toBe "stream"
+          consumeStream response.data, (result) ->
+            expect(result).toBe "hello world\n"
 
       it "can run commands in contexts", ->
         xikij = new Xikij()
-        requestResponded = false
-        runs ->
-          xikij.request {body: "#{__dirname}\n  $ pwd\n"}, (response) ->
-            expect(response.type).toBe "stream"
-            consumeStream response.data, (result) ->
-              expect(result).toBe "#{__dirname}\n"
-            requestResponded = true
-        waitsFor (-> requestResponded), "xiki command has responded", 1000
+
+        doPromisedRequest xikij, {body: "#{__dirname}\n  $ pwd\n"}, (response) ->
+          expect(response.type).toBe "stream"
+          consumeStream response.data, (result) ->
+            expect(result).toBe "#{__dirname}\n"
 
     describe "passing no path, but a body", ->
     describe "passing no path, but a body and parameters", ->

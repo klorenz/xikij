@@ -1,36 +1,45 @@
-module.exports =
-  class Context
+class RejectPath extends Error
+  constructor: -> super()
 
-    NAME: null
-    MENU: null
+class Context
 
-    constructor: (@context) ->
+  NAME: null
+  MENU: null
 
-      if typeof @PATTERN is "string"
-        @PATTERN = new Regexp @PATTERN
+  constructor: (@context) ->
 
-      @nodePath = null
-      @xikiPath = null
-      @subcontext = null
+    if typeof @PATTERN is "string"
+      @PATTERN = new Regexp @PATTERN
 
-      #@on "open", (xikiRequest) => @open(xikiRequest)
-      #@on "open", (xikiRequest) => @open(xikiRequest)
+    @nodePath = null
+    @xikiPath = null
+    @subcontext = null
 
-    CONTEXT: null
-    PATTERN: null
+    @weight = 1
 
-    does: (xikiRequest, xikiPath) ->
-      if @PATTERN?
-        m = @PATTERN.exec xikiPath.toPath()
-        if m
-          @mob = m
-          return true
+    #@on "open", (xikiRequest) => @open(xikiRequest)
+    #@on "open", (xikiRequest) => @open(xikiRequest)
 
-      return false unless xikiPath
+  CONTEXT: null
+  PATTERN: null
 
-      # mob contains match object from @PATTERN
+  does: (xikiRequest, xikiPath) ->
+    if @PATTERN?
+      m = @PATTERN.exec xikiPath.toPath()
+      if m
+        @mob = m
+        return true
 
-    rootMenuItems: -> return ''
+    return false unless xikiPath
 
-    # called to get context for this context
-    getContext: -> this
+    # mob contains match object from @PATTERN
+
+  reject: ->
+    throw new RejectPath("does not handle this path")
+
+  rootMenuItems: -> return ''
+
+  # called to get context for this context
+  getContext: -> this
+
+module.exports = {Context, RejectPath}

@@ -58,16 +58,9 @@ module.exports = (Interface) ->
       filename = path.join(@tmpdir, name)
 
       if content or content is ""
-        deferred = Q.defer()
-        @writeFile filename, content, options, (err) =>
-          if err
-            deferred.reject new Error(err)
-          else
-            deferred.resolve filename
-
-        deferred.promise
+        return @writeFile(filename, content, options).then -> filename
       else
-        Q.fcall -> filename
+        return Q(filename)
 
     cacheFile: (name, content, options) ->
       @tempFile(name, content, options)
@@ -83,18 +76,16 @@ module.exports = (Interface) ->
       dirname = path.dirname(filename)
       options = options or {}
 
-      @exists(dirname).then (exists) ->
-        return if exists
-        @makeDirs(dirname).then ->
-          deferred = Q.defer()
+      @makeDirs(dirname).then ->
+        deferred = Q.defer()
 
-          fs.writeFile filename, content, options, (err) ->
-            if err
-              deferred.reject new Error(err)
-            else
-              deferred.resolve()
+        fs.writeFile filename, content, options, (err) ->
+          if err
+            deferred.reject new Error(err)
+          else
+            deferred.resolve()
 
-          deferred.promise
+        deferred.promise
 
 
     openFile: (filename) ->
@@ -221,7 +212,7 @@ module.exports = (Interface) ->
         if stat.isDirectory()
           promises.push @walk filename, fileFunc, dirFunc, options
         else
-          promises.push Q.when fileFunc(filename, stat, dir, e), (value) => value
+          promises.push Q(fileFunc(filename, stat, dir, e))
 
       Q.all(promises).then (results) ->
         if typeof dirCallback is "function"
@@ -234,25 +225,12 @@ module.exports = (Interface) ->
 
       @isDirectory(filename).then (isdir) =>
         if isdir
-          rmtree = ->
-            try
-              @walk filename,
-                (fn) -> fs.unlinkSync(fn),
-                (dn) -> -> fs.rmdirSync(dn)
+          @walk filename,
+            (fn) -> fs.unlinkSync(fn),
+            (dn) -> -> fs.rmdirSync(dn)
 
-              deferred.resolve(true)
-            catch err
-              deferred.reject(err)
-
-          setTimeout rmtree, 1
         else
-          fs.unlink filename, (err) ->
-            if err
-              deferred.reject new Error(err)
-            else
-              deferred.resolve(true)
-
-      deferred.promise
+          Q(fs.unlinkSync(filename))
 
     getMTime: (filename) ->
       stat = fs.statSync(filename)

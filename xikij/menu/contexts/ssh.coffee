@@ -3,7 +3,7 @@
   on a remote machine.
   """
 
-class @SSH extends xiki.Context
+class @SSH extends xikij.Context
   PATTERN = ///
     ([\w\-]+)  # user
     @
@@ -16,9 +16,10 @@ class @SSH extends xiki.Context
   }
 
   does: (xikiRequest, xikiPath) ->
+    return false if xikiPath.empty()
     xikiPath = xikiPath.shift() if xikiPath.at(0, "")
 
-    if m = xikiPath.first().match(PATTERN)
+    if m = xikiPath.first().match(@PATTERN)
       [cmd, user, host, port] = m
       path = xikiPath.shift()
       @sshData = {cmd, user, host, port}

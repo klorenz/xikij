@@ -16,7 +16,6 @@ class Package extends EventEmitter
     @errors = null
 
   load: (xikij) ->
-    debugger
     xikij.moduleLoader.load this
 
   asObject: (attributes...)->
@@ -39,6 +38,7 @@ class PackageManager extends EventEmitter
 
   loaded: ->
     Q.all(@loading).then (result) =>
+      @emit "loaded"
       return result
 
   add: (dir, name) ->

@@ -3,7 +3,7 @@
   You have multiple opportunities to add active content to a menu.
   """
 
-class @Menu extends xiki.Context
+class @Menu extends xikij.Context
   _matchPath: (a, b) ->
     minlen = min(a.length, b.length)
     if a[...minlen] == b[...minlen]
@@ -18,15 +18,11 @@ class @Menu extends xiki.Context
     @menuName = xp = xikiPath.toPath().replace(/^\//, '').replace(/\/$/, '')
     @menuPath = null
     @menuDir  = null
-
-    console.log "Menu Requ", xikiRequest
-    console.log "Menu Path", xikiPath
-
     xp = xikiPath.toPath().replace(/^\//, '').replace(/\/$/, '')
 
     max_minlen = 0
-    for m in xiki.packages.modules()
-      console.log "mod", m
+    for m in xikij.packages.modules()
+      #console.log "mod", m
       mn = m.menuName
 
       minlen = Math.min(mn.length, xp.length)
@@ -42,9 +38,11 @@ class @Menu extends xiki.Context
 
       @module = m
 
+    @weight = max_minlen
+
     return yes if max_minlen
 
-    return no
+    @reject()
 
   expand: (request) ->
     console.log "menu: expand", request

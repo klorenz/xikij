@@ -12,7 +12,9 @@
 
 path = require "path"
 
-class @Directory extends xiki.Context
+Q = xikij.Q
+
+class @Directory extends xikij.Context
   PS1 = "  $ "
 
   rootMenuItems: ->
@@ -20,50 +22,47 @@ class @Directory extends xiki.Context
     @projectDirs().concat ["~/", "./", "/"]
 
   does: (xikiRequest, xikiPath) ->
-    p = xikiPath.toPath()
-    p = @shellExpand(p).replace "\\", "/"
-    p = p.split('/')
+    p      = null
+    fsRoot = null
 
-    @fileName = null
-    @filePath = null
+    @context.shellExpand(xikiPath.toPath())
+      .then (xp) =>
+        p = xp.replace("\\", "/").split('/')
 
-    fsRoot = p[...2].join("/")
+        @fileName = null
+        @filePath = null
 
-    if @isAbs fsRoot
-      @cwd = fsRoot
-      p = p[2..]
-    else if p[0] == '.'
-      @cwd = @context.getCwd()
-      p = p[1..]
-    else if p[0] == '~'
-      @cwd = @shellExpand("~")
-      p = p[1..]
-    else if p[0][0] == '~'
-      f = p[0][1..].replace(/\/+$/, '').replace(/^\//, '')
+        p[...2].join("/")
 
-      unless f in @getSystemDirs()
-        unless f in @getProjectDirs()
-          return false
+      .then (fsRoot) =>
+        @isAbs fsRoot
 
-      @cwd = @expandDir(f)
+      .then (isabs) =>
+        if isabs
+          p = p[2..]
+          fsRoot
+        else if p[0] == '.'
+          p = p[1..]
+          @context.getCwd()
+        else if p[0].match /^~/
+          @dirExpand(p.join("/"))
+        else
+          @reject()
 
-      p = p[1..]
-    else
-      return false
+      .then (cwd) =>
+        @reject() unless cwd
+        @reject() unless @exists cwd
+        @cwd = cwd
 
-    @cwd = path.join.apply undefined, [ @cwd ].concat p
+      .then (cwd) =>
+        unless @isDirectory cwd
+          @filePath = @cwd
+          @cwd      = path.dirname @cwd
+          @fileName = path.basename @filePath
 
-    return false unless @context.exists @cwd
-
-    unless @context.isDirectory @cwd
-      @filePath = @cwd
-      @cwd = path.dirname(@cwd)
-      @fileName = path.basename(@filePath)
-
-    return true
+        @weight = @cwd.length
 
   expand: ->
-    debugger
     if @filePath
       return @openFile @filePath
 
@@ -75,4 +74,4 @@ class @Directory extends xiki.Context
     else
       return @readDir @cwd
 
-  getCwd: -> @cwd
+  getCwd: Q.fcall => @cwd

@@ -4,6 +4,7 @@ fs     = require "fs"
 util   = require "./util"
 _      = require "underscore"
 vm     = require "vm"
+Q      = require "q"
 
 coffeescript = require "coffee-script"
 
@@ -16,15 +17,17 @@ class ModuleLoader
 
     @xikij.exists(dir).then (exists) =>
       return unless exists
-
-      @xikij.walk dir, (entry) =>
+      return @xikij.walk dir, (entry) =>
         @loadModule pkg, dir, entry[dir.length+1..]
 
   loadCoffeeScript: (code, xikijData) ->
     filename = xikijData.fileName
-    o = {filename, sourceMap: on, bare: on}
-    answer = coffeescript.compile code, o
-    @runJavaScript answer.js, filename, xikijData
+
+    compiled = Q.fcall ->
+      o = {filename, sourceMap: on, bare: on}
+      coffeescript.compile code, o
+
+    compiled.then (answer) => @runJavaScript answer.js, filename, xikijData
 
   runJavaScript: (js, filename, context, sourceMap) ->
     # TODO
@@ -66,12 +69,14 @@ class ModuleLoader
     console.log error.stack.toString()
 
   loadModule: (pkg, dir, entry) ->
+    console.log "loadModule", pkg, dir, entry
+
     sourceFile = path.join dir, entry
-    name = path.basename sourceFile
+    #name = path.basename sourceFile
 
     moduleName = ""
 
-    name = name.replace(/\..*$/, '') # strip extensions
+    name = entry.replace(/\..*$/, '') # strip extensions
     moduleName = "#{pkg.name}/#{name}"
 
     xikijData =
@@ -85,14 +90,14 @@ class ModuleLoader
     switch path.extname(sourceFile)
       when ".coffee"
         return @xikij.readFile(sourceFile).then (content) =>
-          try
-            context = @loadCoffeeScript content.toString(), xikijData
-            pkg.modules.push context
+          @loadCoffeeScript(content.toString(), xikijData)
+            .then (context) =>
+              pkg.modules.push context
 
-            for k,v of context
-              if util.isSubClass(v, @xikij.Context)
-                @xikij.addContext(k,v)
-          catch error
-            @handleError pkg, moduleName, error
+              for k,v of context
+                if util.isSubClass(v, @xikij.Context)
+                  @xikij.addContext(k,v)
+            .fail (error) =>
+              @handleError pkg, moduleName, error
 
 module.exports = {ModuleLoader}

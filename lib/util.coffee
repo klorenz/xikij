@@ -114,6 +114,11 @@ module.exports =
       .on "data", (data) -> result += data.toString()
       .on "end", -> callback(result)
 
+  promised: (promise, callback) ->
+    promise.then(callback).fail (error) ->
+      console.log error
+      throw error #new Error(error)
+
   cookCoffee: (content, done) ->
     lines = content.toString().split(/\n/)
     isCoffee = false

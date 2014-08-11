@@ -35,7 +35,8 @@ class Xikij extends EventEmitter
     @Interface = (require './interfaces')(new Interface())
     @Interface.mixDefaultsInto this
 
-    @Context = @Interface.mixInto require './context'
+    @Context = @Interface.mixInto require('./context').Context
+    @Q = Q
 
     @_contexts = []
     @_context  = {}
@@ -83,6 +84,8 @@ class Xikij extends EventEmitter
   request: ({path, body, args, action, context}, respond) ->
     @initialized = @initialize() unless @initialized
 
+    deferred = Q.defer()
+
     @initialized.then =>
 
       {parseXikiRequest} = require "./request-parser"
@@ -90,14 +93,21 @@ class Xikij extends EventEmitter
 
       context = this unless context
 
-      request.process context, (response) ->
-        unless response instanceof Response
-          response = new Response data: response
+      request.process(context).then (response) ->
+        console.log "xikij request response", response
+        Q .when(response, (response) =>
+            console.log "Q xikij request response", response
 
-        if respond
-          respond response
+            unless response instanceof Response
+              response = new Response data: response
 
-        Q.fcall -> response
+            deferred.resolve(response)
+            if respond
+              respond response
+          )
+          .done()
+
+    deferred.promise
 
 
   # TODO make ctx reloadable/overridable
@@ -117,3 +127,4 @@ module.exports =
   Xikij: Xikij
   XikijClient: XikijClient
   util: util
+  Q: Q

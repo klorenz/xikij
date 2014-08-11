@@ -1,4 +1,5 @@
 Q = require "q"
+{promised} = require "./util"
 
 module.exports = (Interface) ->
   Interface.define class Env
@@ -10,29 +11,32 @@ module.exports = (Interface) ->
 
   Interface.default class Env extends Env
     shellExpand: (s) ->
-      result = s.replace /\$\{\w+\}/g, (m) ->
-        varname = m[2...-1]
-        if varname of process.env
-          process.env[varname]
-        else
-          m
+      promised @getEnv().then (env) =>
+        result = s.replace /\$\{\w+\}/g, (m) ->
+          varname = m[2...-1]
+          if varname of env
+            env[varname]
+          else
+            m
 
-      result = result.replace /\$\w+/g, (m) ->
-        varname = m[1...]
-        if varname of process.env
-          process.env[varname]
-        else
-          m
+        result = result.replace /\$\w+/g, (m) ->
+          varname = m[1...]
+          if varname of env
+            env[varname]
+          else
+            m
 
-      Q.fcall -> result
+        result
 
     dirExpand: (s) ->
       if s.match /^~~/
         @getProjectDir().then (v) -> v + s[2..]
       else if (m = s.match /^~([^\/]+)/)
         @getProjectDir(m[1]).then (v) -> v + s[m[0].length..]
-      else if /^~/
+      else if s.match /^~/
         @getUserDir().then (v) -> v+s[1..]
+      else
+        s
 
     getUserDir: -> Q.fcall -> @getEnv("HOME")
 

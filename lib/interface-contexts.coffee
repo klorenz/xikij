@@ -4,11 +4,12 @@ module.exports = (Interface) ->
   Interface.define class Contexts
     # ### expand
     #
-    getContexts: (args...) -> @context.contexts args...
+    getContexts: (args...) -> @context.getContexts args...
 
     addContext: (args...) -> @context.addContext args...
 
     getContextClass: -> Q.fcall =>
+      console.log "this", this
       if "Context" of this
         @Context
       else

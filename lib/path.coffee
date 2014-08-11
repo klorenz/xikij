@@ -38,7 +38,7 @@ class Path
   shift: -> @[1..]
 
   at: (index, value) ->
-    if typeof value is string
+    if typeof value is "string"
       @nodePath[index].name == value
     else
       @nodePath[index].name

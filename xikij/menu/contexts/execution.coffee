@@ -1,7 +1,8 @@
 {parseCommand} = @require "util"
 stream = require "stream"
+debugger
 
-class @Execution extends xiki.Context
+class @Execution extends xikij.Context
   PS1 = "$ "
 
   does: (xikiRequest, xikiPath) ->
@@ -12,27 +13,29 @@ class @Execution extends xiki.Context
     return true
 
   expand: (req) ->
-    debugger
     command = @mob[1]
     return "" if /^\s*$/.test command
 
     cmd = parseCommand(command)
 
     output = stream.PassThrough()
-    opts = { cwd: @context.getCwd() }
+    @context.getCwd()
+      .then (cwd) =>
+        console.log "cwd", cwd
+        opts = {cwd: cwd}
+      .then (opts) =>
+        unless cmd
+          @context.executeShell command, opts
+        else
+          @context.execute (cmd.concat [ opts ])...
+      .then (proc) =>
+        proc.stdout.pipe(output)
+        proc.stderr.pipe(output)
 
-    unless cmd
-      p = @context.executeShell command, opts
-    else
-      p = @context.execute (cmd.concat [ opts ])...
+        if req.input
+          proc.stdin.write(req.input)
+          proc.stdin.end()
 
-    p.stdout.pipe(output)
-    p.stderr.pipe(output)
-
-    if req.input
-      p.stdin.write(req.input)
-      p.stdin.end()
+        output
 
     # we could p.on "close" -> output.write("[error: returned x]") or emit a special event on output
-
-    output
