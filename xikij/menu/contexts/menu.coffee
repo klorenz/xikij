@@ -13,12 +13,14 @@ class @Menu extends xikij.Context
         a[m]
 
   does: (xikiRequest, xikiPath) ->
+    return no if xikiPath.rooted()
+
     #return false unless xikiPath
     @xikiPath = xikiPath
-    @menuName = xp = xikiPath.toPath().replace(/^\//, '').replace(/\/$/, '')
+    @menuName = xp = xikiPath.toPath().replace(/\/$/, '')
     @menuPath = null
     @menuDir  = null
-    xp = xikiPath.toPath().replace(/^\//, '').replace(/\/$/, '')
+    xp = xikiPath.toPath().replace(/\/$/, '')
 
     max_minlen = 0
     for m in xikij.packages.modules()
@@ -45,8 +47,6 @@ class @Menu extends xikij.Context
     @reject()
 
   expand: (request) ->
-    console.log "menu: expand", request
-
     if @menuDir?
       len = @menuDir.length
       result = []
@@ -59,7 +59,6 @@ class @Menu extends xikij.Context
       return result
 
     if @menuPath?
-      console.log "cloning request"
       req = request.clone xikiPath: @xikiPath, menuName: @menuName
 
       if @module.expand

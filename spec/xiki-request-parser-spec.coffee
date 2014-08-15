@@ -92,6 +92,37 @@ describe "Request Parser", ->
         expect parsed("- foo/bar/glork")
           .toEqual result(node: ["foo", "bar", 'glork'])
 
+  describe "parseXikiRequest", ->
+    parsed = null
+    it "can parse path /foo/bar", ->
+      parsed = rp.parseXikiRequest {path: "/foo/bar"}
+      expect(parsed).toDeepMatch {
+        nodePaths: [
+          { nodePath: [
+              { name: "", position: 0 }
+              { name: "foo", position: 0 }
+              { name: "bar", position: 0 }
+            ]
+          }
+        ]
+      }
+
+    it "can parse path /foo/bar", ->
+      parsed = rp.parseXikiRequest {path: "/foo/bar/"}, ->
+      expect(parsed).toDeepMatch {
+        nodePaths: [
+          { nodePath: [
+              { name: "", position: 0 }
+              { name: "foo", position: 0 }
+              { name: "bar", position: 0 }
+              { name: "", position: 0 }
+            ]
+          }
+        ]
+      }
+      expect(parsed.nodePaths[0].toPath()).toBe "/foo/bar/"
+
+
   describe "parseXikiRequestFromTree", ->
     parsed = null
     body =  """
@@ -129,3 +160,21 @@ describe "Request Parser", ->
             { nodePath: [{name: "$ ls -al", position: 0}] }
           ]
         }
+
+    it "can parse a command in directory context with ending /", ->
+      body = """
+        #{__dirname}/
+          $ ls -al
+      """
+      parsed = rp.parseXikiRequestFromTree {body}
+      _nodePath = ({name: f, position: 0} for f in __dirname.split("/"))
+
+      expect(parsed).toDeepMatch {
+          body: body
+          nodePaths: [
+            { nodePath: _nodePath }
+            { nodePath: [{name: "$ ls -al", position: 0}] }
+          ]
+        }
+
+      expect(parsed.nodePaths[0].toPath()).toEqual "#{__dirname}/"

@@ -11,8 +11,13 @@
   """
 
 path = require "path"
+Q = require "q"
+_ = require "underscore"
 
-Q = xikij.Q
+DEBUG = true
+
+debug = (args...) ->
+  console.debug "CTX:Directory:", args... if DEBUG
 
 class @Directory extends xikij.Context
   PS1 = "  $ "
@@ -22,11 +27,14 @@ class @Directory extends xikij.Context
     @projectDirs().concat ["~/", "./", "/"]
 
   does: (xikiRequest, xikiPath) ->
-    p      = null
-    fsRoot = null
+    p        = null
+    fsRoot   = null
+    menuPath = null
 
-    @context.shellExpand(xikiPath.toPath())
+    @context.shellExpand xikiPath.toPath()
       .then (xp) =>
+        menuPath = xp
+        debug "xp", xp
         p = xp.replace("\\", "/").split('/')
 
         @fileName = null
@@ -39,31 +47,56 @@ class @Directory extends xikij.Context
 
       .then (isabs) =>
         if isabs
-          p = p[2..]
-          fsRoot
+          menuPath
+
         else if p[0] == '.'
           p = p[1..]
           @context.getCwd()
         else if p[0].match /^~/
           @dirExpand(p.join("/"))
         else
-          @reject()
+          @reject("directory")
 
       .then (cwd) =>
-        @reject() unless cwd
-        @reject() unless @exists cwd
+        debug "cwd1", cwd
+
+        @reject("directory") unless cwd
         @cwd = cwd
+        unless _.last(xikiRequest.nodePaths) is xikiPath
+          debug "is intermediate"
+          # intermediate path, which must have an existing directory
+          # part, which can serve as cwd
+          @isDirectory(cwd).then (isdir) =>
+            unless isdir
+              dir = path.dirname cwd
+              @isDirectory(dir).then (isdir) =>
+                @reject("#{dir} is no directory") unless isdir
+                @_yes(cwd, false)
+              # TODO: check if assert @filePath exists needed
+            else
+              @_yes(cwd, true)
+        else
+          debug "is last"
+          if menuPath.match /\/$/
+            @_yes(menuPath[...-1], true)
+          else
+            @_yes(cwd, false)
 
-      .then (cwd) =>
-        unless @isDirectory cwd
-          @filePath = @cwd
-          @cwd      = path.dirname @cwd
-          @fileName = path.basename @filePath
-
-        @weight = @cwd.length
+  _yes: (filePath, isdir) ->
+    @filePath = filePath
+    @isdir    = isdir
+    @weight   = filePath.length
+    @fileName = path.basename filePath
+    @dirName  = path.dirname filePath
+    if isdir
+      @cwd = @filePath
+    else
+      @cwd = @dirName
+    debug "yes:", filePath
+    yes
 
   expand: ->
-    if @filePath
+    unless @isdir
       return @openFile @filePath
 
       # if lines
@@ -74,4 +107,4 @@ class @Directory extends xikij.Context
     else
       return @readDir @cwd
 
-  getCwd: Q.fcall => @cwd
+  getCwd: -> Q.fcall => @cwd

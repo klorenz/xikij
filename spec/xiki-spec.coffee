@@ -87,7 +87,7 @@ describe "Xikij", ->
         os = require "os"
 
         runs ->
-          xikij.request {path: "/hostname"}, (response) ->
+          xikij.request {path: "hostname"}, (response) ->
             expect(response.data).toEqual os.hostname()
             requestResponded = true
 
@@ -97,7 +97,7 @@ describe "Xikij", ->
         xikij = new Xikij()
         os = require "os"
 
-        doPromisedRequest xikij, {path: "/hostname"}, (response) ->
+        doPromisedRequest xikij, {path: "hostname"}, (response) ->
           console.log "--- got", response
           expect(response.data).toEqual os.hostname()
 

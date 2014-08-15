@@ -1,5 +1,5 @@
 class RejectPath extends Error
-  constructor: -> super()
+  constructor: (s) -> super()
 
 class Context
 
@@ -34,8 +34,8 @@ class Context
 
     # mob contains match object from @PATTERN
 
-  reject: ->
-    throw new RejectPath("does not handle this path")
+  reject: (s)->
+    throw new RejectPath(s)
 
   rootMenuItems: -> return ''
 

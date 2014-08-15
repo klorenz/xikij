@@ -2,6 +2,12 @@
 Q = require "q"
 {RejectPath} = require "./context"
 
+DEBUG = true
+# debug = (args...) ->
+#   console.debug "xikij:Request:", args... if DEBUG
+
+_ID = 0
+
 class Request
   constructor: (opts) ->
     {@body, @nodePaths, @args, @action, @input} = opts
@@ -14,15 +20,15 @@ class Request
       @nodePaths = {}
 
   getContext: (context, xikiPath) ->
-    console.log "getContext", context, xikiPath
+    console.debug "xikij:Request:", "getContext", context, xikiPath
 
     unless xikiPath
       context = Q(context)
       @nodePaths.forEach (xikiPath) =>
-        console.log "nodePath", xikiPath
+        console.debug "-> nodePath", xikiPath
         context = context.then (ctx) =>
-          console.log "ctx", ctx
-          console.log "xikiPath", xikiPath
+          console.debug "-> ctx", ctx
+          console.debug "-> xikiPath", xikiPath
           @getContext(ctx, xikiPath)
 
       return context
@@ -31,57 +37,63 @@ class Request
       promises = []
       deferred = Q.defer()
 
+      ID = ++_ID
+
       Q.when context, (context) =>
         context.getContexts().then (contexts) =>
-          console.log "contexts", contexts
+          console.debug ID, "contexts", contexts
 
           selectedContext = null
-          last = contexts.length-1
+          contextsDone = []
+          console.debug ID, "contextsDone (init)", contextsDone
 
-          for ContextClass,i in contexts
+          contexts.forEach (ContextClass, i) =>
             ctx = new ContextClass(context)
+            console.debug ID, i, "parent", context, "child", ctx
 
-            f = (ctx, i) =>
-              Q .fcall =>
-                  ctx.does(this, xikiPath)
-                .then (result) =>
-                  console.log "ctx.does", result
+            Q .fcall =>
+                ctx.does(this, xikiPath)
+              .then (result) =>
+                contextsDone.push ctx
+                console.debug ID, "contextsDone (then)", contextsDone
 
-                  ctx.reject() unless result
+                console.debug ID, "ctx.does", ctx, result
 
-                  ctx = ctx.getContext()
-                  console.log "ctx.doing!", ctx
+                ctx.reject() unless result
 
+                ctx = ctx.getContext()
+
+                console.debug ID, "ctx.doing!", ctx
+
+                unless selectedContext?
+                  selectedContext = ctx
+                else if selectedContext.weight > ctx.weight
+                  selectedContext = ctx
+
+                if contextsDone.length == contexts.length
+                  console.debug ID, "==> resolving", selectedContext
                   unless selectedContext?
-                    selectedContext = ctx
-                  else if selectedContext.weight > ctx.weight
-                    selectedContext = ctx
+                    selectedContext = context
+                  deferred.resolve(selectedContext)
 
-                  console.log "i", i, "last", last
+              .fail (error) =>
+                if not (ctx in contextsDone)
+                  contextsDone.push ctx
+                console.debug ID, "contextsDone (fail)", contextsDone
 
-                  if i == last
-                    console.log "resolving", selectedContext
-                    unless selectedContext?
-                      selectedContext = context
-                    deferred.resolve(selectedContext)
+                console.debug ID, "error on ctx does", error
+                unless error instanceof RejectPath
+                  deferred.reject(error)
+                else if contextsDone.length == contexts.length
+                  unless selectedContext?
+                    selectedContext = context
+                  console.debug ID, "==> resolving", selectedContext
+                  deferred.resolve(selectedContext)
 
-                .fail (error) =>
-                  console.log "error on ctx does", error
-                  console.log "i", i, "last", last
-                  unless error instanceof RejectPath
-                    deferred.reject(error)
-                  else if i == last
-                    unless selectedContext?
-                      selectedContext = context
-                    console.log "resolving", selectedContext
-                    deferred.resolve(selectedContext)
+              .done()
 
-                .done()
-
-            f(ctx, i)
 
       return deferred.promise
-
 
 
 
@@ -153,23 +165,26 @@ class Request
 
     deferred = Q.defer()
 
-    context.getContextClass().then (Context) =>
+    context.getContextClass()
+      .then (Context) =>
 
-      # this implements getting things from environment
-      class Request extends Context
-        projectDirs: -> Q.fcall -> theRequest.args.projectDirs
-        fileName: -> Q.fcall -> theRequest.args.fileName
+        # this implements getting things from environment
+        class Request extends Context
+          projectDirs: -> Q.fcall -> theRequest.args.projectDirs
+          fileName: -> Q.fcall -> theRequest.args.fileName
 
-      @getContext(new Request(context)).then (context) =>
-        @context = context
-        action = @action or "expand"
-        result = context[action](this)
-        console.log "process result", result
-        deferred.resolve Q.when result, (r) -> r
+        @getContext(new Request(context)).then (context) =>
+          @context = context
+          action = @action or "expand"
+          result = context[action](this)
+          console.debug "process result", result
+          deferred.resolve Q.when result, (r) -> r
 
-      .fail (error) =>
-        console.log "getContext failed", error
-        deferred.reject(error)
+      .done()
+
+      # .fail (error) =>
+      #   console.debug "getContext failed", error
+      #   deferred.reject(error)
 
     deferred.promise
 

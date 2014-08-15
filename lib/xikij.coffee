@@ -95,7 +95,8 @@ class Xikij extends EventEmitter
 
       request.process(context).then (response) ->
         console.log "xikij request response", response
-        Q .when(response, (response) =>
+        Q .when(response,
+          ( (response) =>
             console.log "Q xikij request response", response
 
             unless response instanceof Response
@@ -104,8 +105,14 @@ class Xikij extends EventEmitter
             deferred.resolve(response)
             if respond
               respond response
-          )
-          .done()
+          ))
+
+          # ( (error) =>
+          #   deferred.resolve(new Response error)
+          #   if respond
+          #     respons response
+          # ))
+      #.done()
 
     deferred.promise
 

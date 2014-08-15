@@ -5,13 +5,23 @@ fs     = require 'fs'
 stream = require 'stream'
 Q      = require "q"
 
+class DoesNotExist extends Error
+  constructor: -> super()
+
+class DoesExist extends Error
+  constructor: -> super()
+
 module.exports = (Interface) ->
 
   Interface.define class FileSystem
+    DoesNotExist: DoesNotExist
+    DoesExist: DoesExist
 
     isDirectory: (args...) -> @context.isDirectory args...
     readDir:   (args...) -> @context.readDir args...
     exists:    (args...) -> @context.exists args...
+    doesExist:    (args...) -> @context.doesExist args...
+    doesntExist:    (args...) -> @context.doesntExist args...
 
     # walk path
     walk:      (args...) -> @context.walk args...
@@ -37,11 +47,17 @@ module.exports = (Interface) ->
 
     # create a temporary file
     tempFile:  (args...) -> @context.tempFile args...
+    tempDir:  (args...) -> @context.tempDir args...
+
+    cacheFile:  (args...) -> @context.cacheFile args...
+    cacheDir:  (args...) -> @context.cacheDir args...
 
     # remove
     remove:    (args...) -> @context.remove args...
 
     isAbs: (args...) -> @context.isAbs args...
+
+    symLink: (args...) -> @context.symLink args...
 
   Interface.default class FileSystem extends FileSystem
     #
@@ -51,26 +67,50 @@ module.exports = (Interface) ->
     tempFile: (name, content, options) ->
       options = {} unless options
 
-      unless @tmpdir
-        @tmpdir = path.join (os.tmpdir or os.tmpDir)(), uuid.v4()
-        @on 'shutdown', => @remove @tmpdir
+      tmpdir = @_tempDir()
 
-      filename = path.join(@tmpdir, name)
+      filename = path.join(tmpdir, name)
 
       if content or content is ""
         return @writeFile(filename, content, options).then -> filename
       else
         return Q(filename)
 
+    _tempDir: ->
+      unless @_tmpdir
+        @_tmpdir = path.join (os.tmpdir or os.tmpDir)(), "xikij", uuid.v4()
+        @on 'shutdown', => @remove @_tmpdir
+      @_tmpdir
+
+    tempDir: (name, create=true) ->
+      tmpdir = @_tempDir()
+      if name
+        dir = path.join tmpdir, name
+      else
+        dir = tmpdir
+
+      if create
+        @makeDirs dir
+      else
+        Q dir
+
+    cacheDir: (name, create=true) ->
+      @tempDir path.join("cache", name), create
+
     cacheFile: (name, content, options) ->
-      @tempFile(name, content, options)
+      @tempFile(path.join("cache", name), content, options)
 
     makeDirs: (dir) -> Q.fcall ->
       dirParts = dir.split("/")
+      created = false
       for d,i in dirParts
         continue if i is 0
         d = dirParts[..i].join("/")
-        fs.mkdirSync(d) unless fs.existsSync(d)
+        unless fs.existsSync(d)
+          fs.mkdirSync(d)
+          created = true
+
+      created
 
     writeFile: (filename, content, options) ->
       dirname = path.dirname(filename)
@@ -144,28 +184,46 @@ module.exports = (Interface) ->
 
     isDirectory: (filename) ->
       deferred = Q.defer()
-      fs.stat filename, (stat) ->
-        deferred.resolve stat.isDirectory()
+      fs.stat filename, (err, stat) ->
+        if err
+          deferred.reject err
+        else
+          deferred.resolve stat.isDirectory()
 
       deferred.promise
 
     readDir: (dir) ->
       deferred = Q.defer()
 
-      fs.readdir dir, (entries) =>
-        result = []
-        for e in entries
-          if @isDirectory path.join(dir, e)
-            result.push "#{e}/"
-          else
-            result.push e
+      fs.readdir dir, (err, entries) =>
+        if err
+          deferred.reject err
+        else
+          promises = []
+          entries.forEach (e) =>
+            promises.push @isDirectory(path.join(dir, e)).then (isdir) =>
+              if isdir
+                "#{e}/"
+              else
+                e
 
-        Q.resolve result
+          Q.all(promises).then (result) =>
+            deferred.resolve result
 
       deferred.promise
 
-    exists: (filename) ->
-      Q.fcall -> fs.existsSync(filename)
+    exists: (filename) -> Q.fcall ->
+      result =  fs.existsSync filename
+      console.log "exists?", filename, result
+      result
+
+    doesExist: (filename) -> Q.fcall ->
+      throw DoesNotExist(filename) unless fs.existsSync(filename)
+      true
+
+    doesNotExist: (filename) -> Q.fcall ->
+      throw DoesExist(filename) if fs.existsSync(filename)
+      true
 
     # ## walk(dir, fileFunc, [ dirFunc,] [ options ])
     #
@@ -241,3 +299,8 @@ module.exports = (Interface) ->
 
     isAbs: (dir) ->
       Q.fcall -> path.resolve(dir) == dir
+
+    symLink: (srcpath, dstpath, type) ->
+      srcpath = srcpath.replace /\/$/, ''
+      dstpath = dstpath.replace /\/$/, ''
+      Q.fcall -> fs.symlinkSync srcpath, dstpath, type

@@ -11,22 +11,25 @@ module.exports = (Interface) ->
 
   Interface.default class Env extends Env
     shellExpand: (s) ->
-      promised @getEnv().then (env) =>
-        result = s.replace /\$\{\w+\}/g, (m) ->
-          varname = m[2...-1]
-          if varname of env
-            env[varname]
-          else
-            m
+      @getEnv()
+        .then (env) =>
+          result = s.replace /\$\{\w+\}/g, (m) ->
+            varname = m[2...-1]
+            if varname of env
+              env[varname]
+            else
+              m
 
-        result = result.replace /\$\w+/g, (m) ->
-          varname = m[1...]
-          if varname of env
-            env[varname]
-          else
-            m
+          result = result.replace /\$\w+/g, (m) ->
+            varname = m[1...]
+            if varname of env
+              env[varname]
+            else
+              m
 
-        result
+          console.log "shellExpand", result
+
+          result
 
     dirExpand: (s) ->
       if s.match /^~~/

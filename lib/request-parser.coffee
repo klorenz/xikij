@@ -40,7 +40,7 @@ matchTreeLine = (s) ->
   else unless CONTEXT.test(s[0])
     unless r.indent
       if s[-1..] == "/"
-        s = s[...-1]
+        #s = s[...-1]
         r.node = s.split PATH_SEP
   #      r.node[r.node.length-1] += "/"
       else
@@ -66,7 +66,7 @@ matchTreeLine = (s) ->
 
   if s[0] != "$"
     if s[-1..] == "/"
-      s = s[...-1]
+      #s = s[...-1]
       r.node = s.split PATH_SEP
 #      r.node[r.node.length-1] += "/"
     else

@@ -1,16 +1,14 @@
-{parseCommand} = @require "util"
+{parseCommand} = require "xikij/util"
+
 stream = require "stream"
-debugger
 
 class @Execution extends xikij.Context
   PS1 = "$ "
 
   does: (xikiRequest, xikiPath) ->
     xp = xikiPath.toPath()
-    m = /^\s*\$\s+(.*)/.exec(xp)
-    return false unless m
-    @mob = m
-    return true
+    return no unless @mob = /^\s*\$\s+(.*)/.exec(xp)
+    return yes
 
   expand: (req) ->
     command = @mob[1]
@@ -19,15 +17,16 @@ class @Execution extends xikij.Context
     cmd = parseCommand(command)
 
     output = stream.PassThrough()
-    @context.getCwd()
+
+    @getCwd()
       .then (cwd) =>
-        console.log "cwd", cwd
         opts = {cwd: cwd}
-      .then (opts) =>
+
         unless cmd
-          @context.executeShell command, opts
+          @executeShell command, opts
         else
-          @context.execute (cmd.concat [ opts ])...
+          @execute cmd.concat([opts])...
+
       .then (proc) =>
         proc.stdout.pipe(output)
         proc.stderr.pipe(output)

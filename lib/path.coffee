@@ -19,6 +19,10 @@ class Path
     if typeof @nodePath is "string"
       @nodePath = (new PathFragment(x) for x in @nodePath.split("/"))
 
+  rooted: ->
+    return no if @empty()
+    @nodePath[0].name is ""
+
   # return the first portion of path
   first: -> @nodePath[0].name
 

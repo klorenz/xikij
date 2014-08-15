@@ -11,6 +11,34 @@ coffeescript = require "coffee-script"
 class ModuleLoader
 
   constructor: (@xikij) ->
+    dstdir = null
+    moddir = path.resolve __dirname, "..", "node_modules"
+
+    x = @xikij
+    @cachedir = x.cacheDir("modules/node_modules", false)
+      .then (_dir) =>
+        dstdir = _dir
+        x.doesNotExist(_dir)
+      .then =>
+        console.log dstdir, "does not exist"
+        x.makeDirs(dstdir)
+      .then =>
+        x.readDir moddir
+      .then (entries) =>
+        console.log "entries1", entries
+        Q.all (x.symLink("#{moddir}/#{e}", "#{dstdir}/#{e}") for e in entries)
+      .then =>
+        x.makeDirs("#{dstdir}/xikij")
+      .then =>
+        x.readDir "#{__dirname}"
+      .then (entries) =>
+        console.log "entries2", entries
+        Q.all (x.symLink("#{__dirname}/#{e}", "#{dstdir}/xikij/#{e}") for e in entries)
+      .fail (error) =>
+        console.log "init moduleloader error", error
+        if error
+          throw error unless error is x.DoesNotExist or error is x.DoesExist
+
 
   load: (pkg) ->
     dir = path.join pkg.dir, "menu"
@@ -52,16 +80,19 @@ class ModuleLoader
       } }
     """
 
-    @xikij.cacheFile(context.moduleName+".js", script).then (filename) =>
-      #if filename in cache remove from module cache
-      exported = require filename
-      context.result = exported.modfunc.call context, @xikij
+    @cachedir.then =>
+      @xikij.cacheFile("modules/#{context.moduleName}.js", script).then (filename) =>
 
-      # module.exports may be mutated
-      context
+        #if filename in cache remove from module cache
+        exported = require filename
+        context.result = exported.modfunc.call context, @xikij
+
+        # module.exports may be mutated
+        context
 
   handleError: (pkg, moduleName, error) ->
     pkg.errors = [] unless pkg.errors
+
     pkg.errors.push
       moduleName: moduleName
       message: error.toString()
@@ -69,8 +100,6 @@ class ModuleLoader
     console.log error.stack.toString()
 
   loadModule: (pkg, dir, entry) ->
-    console.log "loadModule", pkg, dir, entry
-
     sourceFile = path.join dir, entry
     #name = path.basename sourceFile
 
@@ -85,7 +114,6 @@ class ModuleLoader
       moduleName: moduleName
       menuName:   name
       package:    pkg
-      require: (name) -> require "#{__dirname}/#{name}"
 
     switch path.extname(sourceFile)
       when ".coffee"
