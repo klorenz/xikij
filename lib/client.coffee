@@ -46,10 +46,6 @@ class XikijClient
 
 
   request: ({path, body, args, action}, respond) ->
-    @_request {path, body, args, action}, (response) =>
-      unless response instanceof Response
-        response = new Response data: response
-
-      respond response
+    @_request {path, body, args, action}, respond
 
 module.exports = {XikijClient}

@@ -16,11 +16,11 @@ class @Execution extends xikij.Context
 
     cmd = parseCommand(command)
 
-    output = stream.PassThrough()
-
     @getCwd()
       .then (cwd) =>
         opts = {cwd: cwd}
+
+        debugger
 
         unless cmd
           @executeShell command, opts
@@ -28,6 +28,9 @@ class @Execution extends xikij.Context
           @execute cmd.concat([opts])...
 
       .then (proc) =>
+        debugger
+        output = stream.PassThrough()
+
         proc.stdout.pipe(output)
         proc.stderr.pipe(output)
 

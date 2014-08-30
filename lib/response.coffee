@@ -14,6 +14,8 @@ class Response
         type = "buffer"
       if x instanceof Readable
         type = "stream"
+      if x instanceof Error
+        type = "error"
       if x instanceof Array
         type = "array"
 
@@ -25,6 +27,8 @@ class Response
             result += "+ #{s}\n"
         @data = result
         return "string"
+      unless x?
+        type = "nothing"
 
     return type
 

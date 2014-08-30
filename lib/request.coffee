@@ -6,6 +6,9 @@ DEBUG = true
 # debug = (args...) ->
 #   console.debug "xikij:Request:", args... if DEBUG
 
+unless console.debug
+  console.debug = ->
+
 _ID = 0
 
 class Request
@@ -92,7 +95,6 @@ class Request
 
               .done()
 
-
       return deferred.promise
 
 
@@ -176,7 +178,10 @@ class Request
         @getContext(new Request(context)).then (context) =>
           @context = context
           action = @action or "expand"
-          result = context[action](this)
+          result = null
+          if action of context
+            result = context[action](this)
+
           console.debug "process result", result
           deferred.resolve Q.when result, (r) -> r
 

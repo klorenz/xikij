@@ -51,8 +51,8 @@ module.exports = (Interface) ->
     executeShell: (args...) ->
       switch os.platform()
         when 'win32'
-          @execute.apply this, ["cmd", "/c"].concat args
+          @execute.apply this, ["cmd", "/c", makeCommand(args)]
         else
-          @execute.apply this, ["bash", "-c"].concat args
+          @execute.apply this, ["bash", "-c", makeCommand(args)]
 
       # 'darwin', 'freebsd', 'linux', 'sunos' or 'win32'

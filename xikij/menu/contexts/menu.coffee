@@ -3,6 +3,8 @@
   You have multiple opportunities to add active content to a menu.
   """
 
+Q = require "q"
+
 class @Menu extends xikij.Context
   _matchPath: (a, b) ->
     minlen = min(a.length, b.length)
@@ -11,6 +13,13 @@ class @Menu extends xikij.Context
         b[minlen...]
       else
         a[m]
+
+  rootMenuItems: () ->
+    result = []
+    for m in xikij.packages.modules()
+      r = m.menuName.replace(/\/.*/, '')
+      result.push r unless r in result
+    Q(result)
 
   does: (xikiRequest, xikiPath) ->
     return no if xikiPath.rooted()

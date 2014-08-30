@@ -11,7 +11,7 @@ STRING      = /(\\.|[^"\\]+)*/
 INDEX       = /\[(\d+)\](?=\/|$)/
 BULLET      = /^[\-–—+]\s/
 CONTEXT     = /[@$]/
-NODE_LINE_1 = /(\s*)@\s*(.*)/
+NODE_LINE_1 = /^(\s*)@\s*(.*)/
 INDENT      = /^[ \t]*/
 FREE_LINE   = /(\s*)([^\-–—+].*)/
 NODE_LINE_PROMPT_COMMENT = /^(\s*\$.*)\s+(?:—|–|\#)\s+.*$/
@@ -118,19 +118,14 @@ parseXikiRequest = (request) ->
 
 parseXikiRequestFromTree = ({path, body, action, args}) ->
 
-  console.log "args", args
-
   action = null unless action
   input  = null
-  lines  = (body.replace(/\s+$/, '')+"\n").split(/\n/)
+  lines  = (body.replace(/\s+$/, '')).split(/\n/)
 
   if args
     if 'line' of args
-      input = removeIndent(lines[args.line+1..].join("\n"))
+      input = removeIndent(lines[args.line+1..].join("\n")+"\n")
       lines = lines[..args.line]
-
-  console.log "input", input
-  console.log "lines", lines
 
   node_path     = []
   node_paths    = [ node_path ]
@@ -238,6 +233,7 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
 
   unless node_path.length
     node_paths = node_paths[...-1]
+
 
   for np,i in node_paths
     node_paths[i] = np.reverse()

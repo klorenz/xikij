@@ -8,6 +8,14 @@ Q      = require "q"
 
 coffeescript = require "coffee-script"
 
+class BridgedModule
+
+  constructor: (@bridge, @spec) ->
+    for entry in @spec.callables
+      @[entry] = (args...) =>
+        @bridge.request "moduleRun", @spec.moduleName, args
+
+
 class ModuleLoader
 
   constructor: (@xikij) ->
@@ -127,5 +135,28 @@ class ModuleLoader
                   @xikij.addContext(k,v)
             .fail (error) =>
               @handleError pkg, moduleName, error
+      when ".py"
+        suffix = "py"
+        return @xikij.readFile(sourceFile).then (content) =>
+          if content.match /^#!/
+            # execute file for menu args-protocol
+            throw new Error "not implemented"
+
+          else
+            bridge = @xikij.getBridge(suffix)
+            if bridge?
+              bridge.request("registerModule", xikijData, content)
+                .then (result) =>
+                  module = new BridgedModule bridge, result
+                  pkg.modules.push module
+
+                  for k,v of context
+                    if util.isSubClass(v, @xikij.Context)
+                      @xikij.addContext(k,v)
+                .fail (error) =>
+                  @handleError pkg, moduleName, error
+            else
+              throw new Error "not implemented"
+
 
 module.exports = {ModuleLoader}

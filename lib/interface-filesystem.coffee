@@ -135,6 +135,7 @@ module.exports = (Interface) ->
           @first = true
 
         _transform: (chunk, encoding, done) ->
+          console.log "chunk", chunk.toString()
           if @first
             for c,i in chunk
               if c < 7 or (c > 13 and c < 27) or (c < 32 and c > 27)
@@ -232,7 +233,7 @@ module.exports = (Interface) ->
     # dirFunc returns a function, the function will be called after directory
     # entries have been processed.
     #
-    # example of tree removal:
+    # example of tree removal (locally):
     #
     # ```coffee
     #    X.walk root,
@@ -261,6 +262,17 @@ module.exports = (Interface) ->
         return unless dirCallback
 
       promises = []
+
+      # @readDir(dir).then (entries) =>
+      #   for e in entries
+      #     continue if e in exclude
+      #     filename = path.join dir, e
+      #     @isDirectory(filename).then (isdir) =>
+      #       if isdir
+      #         promises.push @walk filename, fileFunc, dirFunc, options
+      #       else
+      #         promises.push @(fileFunc(filename, stat, dir, e))
+
       for e in fs.readdirSync dir
         continue if e in exclude
 

@@ -93,12 +93,33 @@ describe "Xikij", ->
 
         waitsFor (-> requestResponded), "xiki command has responded", 1000
 
+      it "should handle an empty path", ->
+        xikij = new Xikij()
+        requestResponded = false
+        os = require "os"
+
+        runs ->
+          xikij.request {path: ""}, (response) ->
+            expect(response.data).toEqual """
+              + ~/
+              + ./
+              + /
+              + amazon
+              + bookmarklet
+              + contexts
+              + hostname
+              + ip\n
+            """
+
+            requestResponded = true
+
+        waitsFor (-> requestResponded), "xiki command has responded", 1000
+
       it "should handle the path with promise", ->
         xikij = new Xikij()
         os = require "os"
 
         doPromisedRequest xikij, {path: "hostname"}, (response) ->
-          console.log "--- got", response
           expect(response.data).toEqual os.hostname()
 
       it "can run commands", ->
@@ -114,6 +135,19 @@ describe "Xikij", ->
         xikij = new Xikij()
 
         doPromisedRequest xikij, {body: "#{__dirname}\n  $ pwd\n"}, (response) ->
+          expect(response.type).toBe "stream"
+          consumeStream response.data, (result) ->
+            expect(result).toBe "#{__dirname}\n"
+
+      it "can run commands via SSH", ->
+        xikij = new Xikij()
+        user = process.env['USER']
+        body = """
+          #{user}@localhost:#{__dirname}
+            $ pwd\n
+          """
+
+        doPromisedRequest xikij, {body}, (response) ->
           expect(response.type).toBe "stream"
           consumeStream response.data, (result) ->
             expect(result).toBe "#{__dirname}\n"

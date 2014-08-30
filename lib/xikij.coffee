@@ -1,21 +1,15 @@
-debug = require("debug")('xiki')
-user_xikis = {}
-path = require "path"
-CoffeeScript = require "coffee-script"
-
-
+debug          = require("debug")('xiki')
+path           = require "path"
+CoffeeScript   = require "coffee-script"
 {EventEmitter} = require 'events'
-{XikijClient} = require "./client"
-
+{XikijClient}  = require "./client"
 {ModuleLoader} = require "./extensions"
-
-util = require "./util"
-
-{Response} = require "./response"
-_ = require "underscore"
-
-Q = require "q"
-#XikiContext    = require './context'
+{XikijBridge}  = require "./xikij-bridge.coffee"
+util           = require "./util"
+{Response}     = require "./response"
+_              = require "underscore"
+Q              = require "q"
+fs             = require "fs"
 
 issubclass = (B, A) -> B.prototype instanceof A
 
@@ -31,7 +25,7 @@ class Xikij extends EventEmitter
   constructor: (opts) ->
     opts = opts or {}
 
-    Interface = require './interface'
+    Interface  = require './interface'
     @Interface = (require './interfaces')(new Interface())
     @Interface.mixDefaultsInto this
 
@@ -40,6 +34,9 @@ class Xikij extends EventEmitter
 
     @_contexts = []
     @_context  = {}
+
+    @_bridges  = {}
+    @_bridges['py'] = new XikijBridge(suffix: "py")
 
     # first initialize packages
     @packages   = new PackageManager this
@@ -53,7 +50,11 @@ class Xikij extends EventEmitter
     # initialized method has been triggered
 #    @_initialized = false
 #    @_packages_loaded = false
-
+  getBridge: (suffix) ->
+    if suffix of @_bridges
+      @_bridges[suffix]
+    else
+      null
 
   mixInterfacesInto: (target) ->
     @Interface.mixInto target
@@ -68,7 +69,7 @@ class Xikij extends EventEmitter
 
     packagesPath = @opts.packagesPath || []
     if typeof packagesPath is "string"
-      packagesPath = [ packages Path ]
+      packagesPath = [ packagesPath ]
 
     for p in packagesPath
       p = path.normalize(p)
@@ -78,6 +79,16 @@ class Xikij extends EventEmitter
           @packages.add path.join(p, e)
 
     @packages.loaded().fail (err) => console.log err
+
+  # GET [action], path, [args]
+  GET: (action, path, args=null) ->
+    unless args?
+      unless path
+        path = action
+        action = "expand"
+      args = {}
+
+    @request {path, action, args}
 
 
   # respond gets a Response object, which contains a type and a stream
@@ -95,17 +106,24 @@ class Xikij extends EventEmitter
 
       request.process(context).then (response) ->
         console.log "xikij request response", response
-        Q .when(response,
-          ( (response) =>
+        Q .fcall -> response
+
+          .then (response) =>
             console.log "Q xikij request response", response
 
             unless response instanceof Response
               response = new Response data: response
 
-            deferred.resolve(response)
             if respond
               respond response
-          ))
+
+            deferred.resolve(response)
+
+          .fail(error) =>
+            if respond
+              respond response
+
+            deferred.resolve(new Response data: error)
 
           # ( (error) =>
           #   deferred.resolve(new Response error)

@@ -24,12 +24,16 @@ class @Directory extends xikij.Context
 
   rootMenuItems: ->
     # where to get project paths? Environment?
-    @projectDirs().concat ["~/", "./", "/"]
+    debugger
+    @getProjectDirs().then (result) ->
+      result.concat ["~/", "./", "/"]
 
   does: (xikiRequest, xikiPath) ->
     p        = null
     fsRoot   = null
     menuPath = null
+
+    @input = xikiRequest.input
 
     @context.shellExpand xikiPath.toPath()
       .then (xp) =>
@@ -97,6 +101,11 @@ class @Directory extends xikij.Context
 
   expand: ->
     unless @isdir
+      if @input
+        # TODO: store content
+        @writeFile @filePath, @input
+        return {message: "saved", action: "message"}
+
       return @openFile @filePath
 
       # if lines

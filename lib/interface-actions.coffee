@@ -17,7 +17,24 @@ module.exports = (Interface) ->
 
   Interface.default class Actions extends Actions
 
-    expand:   (req) -> Q.fcall -> ""
+    expand:   (req) ->
+      @getContexts().then (contexts) =>
+        debugger
+        result = []
+        promise = Q(result)
+        contexts.forEach (ContextClass) ->
+          debugger
+          ctx = new ContextClass req.context
+          promise = promise.then (result) ->
+            debugger
+            ctx.rootMenuItems()
+              .then (items) ->
+                debugger
+                result.concat items
+              .fail (error) ->
+                console.log error
+
+        promise
 
     collapse: (req) -> Q.fcall -> null
 

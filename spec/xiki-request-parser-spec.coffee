@@ -55,7 +55,7 @@ describe "Request Parser", ->
         expected = {
             indent: ""
             ctx: "@"
-            node: ["path", "to", "foo"]
+            node: ["path/to/foo"]
           }
         expect rp.matchTreeLine("@ path/to/foo")
           .toEqual expected

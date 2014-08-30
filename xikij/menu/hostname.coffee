@@ -1,5 +1,5 @@
 @docs = """
-  Print hostname of machine running xiki-Ray
+  Print hostname of machine running xikij
   """
 
 @menu = ->

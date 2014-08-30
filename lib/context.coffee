@@ -1,3 +1,5 @@
+Q = require 'q'
+
 class RejectPath extends Error
   constructor: (s) -> super()
 
@@ -37,7 +39,7 @@ class Context
   reject: (s)->
     throw new RejectPath(s)
 
-  rootMenuItems: -> return ''
+  rootMenuItems: -> Q.fcall -> return []
 
   # called to get context for this context
   getContext: -> this
