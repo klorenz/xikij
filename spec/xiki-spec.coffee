@@ -56,11 +56,14 @@ describe "Xikij", ->
             "xikij/bookmarklet"
             "xikij/contexts/directory"
             "xikij/contexts/execution"
+            "xikij/contexts/help"
             "xikij/contexts/menu"
             "xikij/contexts/root"
             "xikij/contexts/ssh"
             "xikij/hostname"
+            "xikij/inspect"
             "xikij/ip"
+            "xikij/log"
           ]
 
         expect( (n for [n,c] in xiki.contexts(named: true)) ).toEqual [
@@ -104,11 +107,14 @@ describe "Xikij", ->
               + ~/
               + ./
               + /
+              + ?
               + amazon
               + bookmarklet
               + contexts
               + hostname
-              + ip\n
+              + inspect
+              + ip
+              + log\n
             """
 
             requestResponded = true
@@ -151,6 +157,15 @@ describe "Xikij", ->
           expect(response.type).toBe "stream"
           consumeStream response.data, (result) ->
             expect(result).toBe "#{__dirname}\n"
+
+      it "can provide help", ->
+        xikij = new Xikij()
+        doPromisedRequest xikij, {body: "?\n"}, (response) ->
+          expect(response.type).toBe "string"
+          expect(response.data).toMatch /^Help for all and everything/  #StartWi xikij.packages.getModule("xikij/contexts/help").doc
+
+      it "can browse files in context of ", ->
+
 
     describe "passing no path, but a body", ->
     describe "passing no path, but a body and parameters", ->

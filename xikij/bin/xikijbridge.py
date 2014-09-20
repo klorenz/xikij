@@ -140,7 +140,7 @@ class Shell:
   """
 
   def readDir(self, path):
-    return os.path.listdir(path)
+    return [ os.path.isdir(p) and p+"/" or p for p in os.listdir(path) ]
 
   def exists(self, path):
     return os.path.exists(path)

@@ -7,6 +7,9 @@ INDENT = "  "
 
 class PathFragment
   constructor: (@name, @position=0) ->
+    if typeof @name is "object"
+      @position = @name.position
+      @name     = @name.name
 
   toString: ->
     if @position > 0
@@ -23,11 +26,23 @@ class Path
     return no if @empty()
     @nodePath[0].name is ""
 
+  getLength: ->
+    @nodePath.length
+
   # return the first portion of path
   first: -> @nodePath[0].name
 
+  # return the first portion of path
+  last: -> @nodePath[@nodePath.length-1].name
+
   slice: (args...) ->
     new Path @nodePath.slice args...
+
+  clone: ->
+    new Path [ new PathFragment(frag) for frag in @nodePath ]
+
+  toArray: ->
+    x.name for x in @nodePath.slice()
 
   unshift: (thing)->
     if thing instanceof Array
@@ -41,9 +56,15 @@ class Path
 
   shift: -> @[1..]
 
+  # at index, [ value ]
+  #
+  # return value at index.  if value given, set the value
   at: (index, value) ->
+    while index < 0
+      index = @nodePath.length + index
+
     if typeof value is "string"
-      @nodePath[index].name == value
+      @nodePath[index].name = value
     else
       @nodePath[index].name
 
@@ -51,6 +72,8 @@ class Path
 
   toPath: ->
     (frag.name for frag in @nodePath).join("/")
+
+  toString: -> @toPath()
 
   selectFromText: (context, text) ->
     unless text instanceof stream.Readable

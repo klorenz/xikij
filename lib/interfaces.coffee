@@ -26,3 +26,4 @@ module.exports = (Interface) ->
     .load("./interface-actions")
     .load("./interface-env")
     .load("./interface-contexts")
+    .load("./interface-logger")

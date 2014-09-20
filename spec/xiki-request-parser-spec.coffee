@@ -122,6 +122,19 @@ describe "Request Parser", ->
       }
       expect(parsed.nodePaths[0].toPath()).toBe "/foo/bar/"
 
+    it "can parse path $ echo 'hello world'", ->
+      debugger
+      parsed = rp.parseXikiRequest {path: "$ echo 'hello world'"}, ->
+        expect(parsed).toDeepMatch {
+          nodePaths: [
+            { nodePath: [
+                {name: "$ echo 'hello world'", position: 0}
+              ]
+            }
+          ]
+        }
+      expect(parsed.nodePaths[0].toPath()).toBe "$ echo 'hello world'"
+
 
   describe "parseXikiRequestFromTree", ->
     parsed = null
@@ -178,3 +191,49 @@ describe "Request Parser", ->
         }
 
       expect(parsed.nodePaths[0].toPath()).toEqual "#{__dirname}/"
+
+    it "can parse an inspect command", ->
+      body = """
+        inspect
+          { body: 'inspect\\n',
+            nodePaths: [Object],
+      """
+      parsed = rp.parseXikiRequestFromTree {body}
+      expect(parsed).toDeepMatch {
+        body: body
+        nodePaths: [
+            { nodePath: [
+              {name: "inspect", position: 0}
+              {name: "{ body: 'inspect\\n',", position: 0}
+              {name: "nodePaths: [Object],", position: 0}
+            ] }
+        ]
+      }
+      #_nodePath = ({name: f, position: 0} for f in __dirname.split("/"))
+
+    it "can parse a SSH host spec", ->
+      body = """
+        user@host.com:
+      """
+      debugger
+      parsed = rp.parseXikiRequestFromTree {body}
+      expect(parsed).toBe ""
+      expect(parsed).toDeepMatch {
+        body: body
+        nodePaths: [
+            { nodePath: [
+              {name: "user@host.com:", position: 0}
+            ] }
+        ]
+      }
+
+
+      # expect(parsed).toDeepMatch {
+      #     body: body
+      #     nodePaths: [
+      #       { nodePath: _nodePath }
+      #       { nodePath: [{name: "$ ls -al", position: 0}] }
+      #     ]
+      #   }
+      #
+      # expect(parsed.nodePaths[0].toPath()).toEqual "#{__dirname}/"

@@ -4,6 +4,7 @@
   """
 
 Q = require "q"
+{Path} = require "xikij/path"
 
 class @Menu extends xikij.Context
   _matchPath: (a, b) ->
@@ -21,29 +22,29 @@ class @Menu extends xikij.Context
       result.push r unless r in result
     Q(result)
 
-  does: (xikiRequest, xikiPath) ->
-    return no if xikiPath.rooted()
+  does: (request, reqPath) ->
+    return no if reqPath.rooted()
 
-    #return false unless xikiPath
-    @xikiPath = xikiPath
-    @menuName = xp = xikiPath.toPath().replace(/\/$/, '')
+    #return false unless reqPath
+    @path = reqPath
+    @menuName = rp = reqPath.toPath().replace(/\/$/, '')
     @menuPath = null
     @menuDir  = null
-    xp = xikiPath.toPath().replace(/\/$/, '')
+    rp = reqPath.toPath().replace(/\/$/, '')
 
     max_minlen = 0
     for m in xikij.packages.modules()
       #console.log "mod", m
       mn = m.menuName
 
-      minlen = Math.min(mn.length, xp.length)
+      minlen = Math.min(mn.length, rp.length)
       continue if minlen < max_minlen
-      continue unless mn[...minlen] == xp[...minlen]
+      continue unless mn[...minlen] == rp[...minlen]
 
       max_minlen = minlen
 
-      if mn.length <= xp.length
-        @menuPath = xp[minlen...].replace /^\//, ''
+      if mn.length <= rp.length
+        @menuPath = rp[minlen...].replace /^\//, ''
       else
         @menuDir = mn[minlen...].replace /^\//, ''
 
@@ -54,6 +55,33 @@ class @Menu extends xikij.Context
     return yes if max_minlen
 
     @reject()
+
+  doc: ->
+    if @menuDir?
+      """
+      A collection of menus.  Hit #{xikij.keys.expand} to list available menus.
+      """
+    else if @menuPath?
+      path = new Path(@menuPath)
+
+      if m = path.first().match /^\.(.*)/
+        method = m[1]
+        if method of @module
+          if @module.docs
+            if method of @module.docs
+              doc = @module.docs[method]
+              if typeof doc is "function"
+                return doc()
+              else
+                return doc
+            else
+              return null
+
+        return "%{method} is no method of #{@menuName}"
+
+      else
+        return @module.doc
+
 
   expand: (request) ->
     if @menuDir?
@@ -68,8 +96,18 @@ class @Menu extends xikij.Context
       return result
 
     if @menuPath?
-      req = request.clone xikiPath: @xikiPath, menuName: @menuName
+      path = new Path(@menuPath)
+      if m = path.first().match /^\.(.*)/
+        method = m[1]
+        if method of @module
+          if typeof @module[method] is "function"
+            return @module[method] request.clone path: path[1..], menuName: @menuName
+          else
+            return @module[method]
+        else
+          throw new Error("method #{method} does not exist in #{@menuName}")
 
+      req = request.clone path: path[1..], menuName: @menuName
       if @module.expand
         return @module.expand req
 

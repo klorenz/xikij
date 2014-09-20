@@ -84,4 +84,9 @@ class PackageManager extends EventEmitter
         result.push m
     result
 
+  getModule: (name) ->
+    for pkg in @_packages
+      for m in pkg.modules
+        return m if m.moduleName == name
+
 module.exports = {Package, PackageManager}

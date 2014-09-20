@@ -1,4 +1,4 @@
-@docs = """
+@doc = """
   Print hostname of machine running xikij
   """
 

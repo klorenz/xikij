@@ -1,15 +1,16 @@
-debug          = require("debug")('xiki')
-path           = require "path"
-CoffeeScript   = require "coffee-script"
-{EventEmitter} = require 'events'
-{XikijClient}  = require "./client"
-{ModuleLoader} = require "./extensions"
-{XikijBridge}  = require "./xikij-bridge.coffee"
-util           = require "./util"
-{Response}     = require "./response"
-_              = require "underscore"
-Q              = require "q"
-fs             = require "fs"
+debug           = require("debug")('xiki')
+path            = require "path"
+CoffeeScript    = require "coffee-script"
+{EventEmitter}  = require 'events'
+{XikijClient}   = require "./client"
+{ModuleLoader}  = require "./extensions"
+{ContentFinder} = require "./content-finder"
+{XikijBridge}   = require "./xikij-bridge"
+util            = require "./util"
+{Response}      = require "./response"
+_               = require "underscore"
+Q               = require "q"
+fs              = require "fs"
 
 issubclass = (B, A) -> B.prototype instanceof A
 
@@ -37,6 +38,8 @@ class Xikij extends EventEmitter
 
     @_bridges  = {}
     @_bridges['py'] = new XikijBridge(suffix: "py")
+
+    @contentFinder = new ContentFinder this
 
     # first initialize packages
     @packages   = new PackageManager this
@@ -100,6 +103,8 @@ class Xikij extends EventEmitter
     @initialized.then =>
 
       {parseXikiRequest} = require "./request-parser"
+
+      debugger
       request = parseXikiRequest {path, body, args, action}
 
       context = this unless context

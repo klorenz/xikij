@@ -49,6 +49,8 @@ endsWith = (subject, string) ->
   return false if subject.length < string.length
   return subject[-string.length..] == string
 
+isEmpty = (string) -> /^\s*$/.test string
+
 removeIndent = (s) ->
   indent = getIndent(s)
   rmInd = new RegExp("^#{indent}", "gm")
@@ -123,7 +125,10 @@ class Indenter extends stream.Transform
         @push @indent
       @firstLine = false
 
-    @push chunk.toString().replace /\n(?!$)/g, "\n#{@indent}"
+    s = chunk.toString()
+    @firstLine = s.match /\n$/
+
+    @push s.replace /\n(?!$)/g, "\n#{@indent}"
     done()
 
 indented = (thing, indent) ->
@@ -232,5 +237,5 @@ makeResponse = (x, annotate) ->
 module.exports = {consumeStream, isSubClass, getIndent, removeIndent,
   endsWith, startsWith, makeResponse, getOutput, cookCoffee, StringReader,
   indented, Indenter, strip, parseCommand, makeCommand, makeCommandString,
-  splitLines, xikijBridgeScript
+  splitLines, xikijBridgeScript, isEmpty
 }

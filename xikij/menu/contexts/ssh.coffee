@@ -24,15 +24,17 @@ class @SSH extends xikij.Context
 
   @bridges: {}
 
-  does: (xikiRequest, xikiPath) ->
-    return false if xikiPath.empty()
-    xikiPath = xikiPath.shift() if xikiPath.at(0, "")
+  does: (request, reqPath) ->
+    debugger
 
-    return false if xikiPath.empty()
+    return false if reqPath.empty()
+    reqPath = reqPath.shift() if reqPath.at(0) == ""
 
-    if m = xikiPath.first().match(@PATTERN)
+    return false if reqPath.empty()
+
+    if m = reqPath.first().match(@PATTERN)
       [cmd, user, host, port, cwd] = m
-      path = xikiPath.shift()
+      path = reqPath.shift()
       @sshData = {cmd, user, host, port, cwd}
       key = "#{user}@#{host}"
 
@@ -57,13 +59,9 @@ class @SSH extends xikij.Context
 
         @context.openFile(bridgeScript)
           .then (stream) =>
-            console.log "opened #{bridgeScript}"
-            console.log "command #{copyCmd}"
             @context.execute(copyCmd...).then (proc) =>
-              console.log "piping stream to ssh's stdin"
               stream.pipe(proc.stdin)
               proc.on "exit", =>
-                console.log "file should be copied"
                 # now install the bridge
                 deferred.resolve new XikijBridge
                   xikijBridge: ".xikijbridge.py"
@@ -71,7 +69,6 @@ class @SSH extends xikij.Context
                   onExit: =>
                     delete SSH.bridges[key]
           .fail (error) ->
-            console.log "error", error
             deferred.reject(error)
 
       @bridge = SSH.bridges[key]
@@ -86,7 +83,6 @@ class @SSH extends xikij.Context
       .then (bridge) =>
         bridge.request @, args...
 
-
   readDir: (dir) ->
     @bridged "readDir", dir
 
@@ -95,6 +91,11 @@ class @SSH extends xikij.Context
   getProjectDirs: -> return []
 
   getSystemDirs: -> return []
+
+  _getCwd: ->
+    return @sshData['cwd'] || '.'
+
+  getCwd: -> Q.fcall => @_getCwd()
 
   execute: (args...) -> @bridged "execute", args...
 
@@ -123,14 +124,18 @@ class @SSH extends xikij.Context
 
   writeFile: (path, content) -> @bridged "writeFile", path, content
 
+  expand: ->
+    cwd = @sshData['cwd'] || "."
+    @bridged "isDirectory", cwd
+      .then (isdir) =>
+        if isdir
+          @bridged "readDir", cwd
+        else
+          @bridged "readFile", cwd
 
-
-      # unless callback
-      #   transformer
-      # else
-      #   streamConsume transformer, (result) =>
-      #     callback(result.split /\n/)
-
-  #readFile: ()
+  # on collapse, we can end bridge command
+  collapse: ->
+    @bridged "exit"
+    null
 
 #  exists: (path,

@@ -5,9 +5,10 @@ stream = require "stream"
 class @Execution extends xikij.Context
   PS1 = "$ "
 
-  does: (xikiRequest, xikiPath) ->
-    xp = xikiPath.toPath()
-    return no unless @mob = /^\s*\$\s+(.*)/.exec(xp)
+  does: (request, reqPath) ->
+    debugger
+    rp = reqPath.toPath()
+    return no unless @mob = /^\s*\$\s+(.*)/.exec(rp)
     return yes
 
   expand: (req) ->

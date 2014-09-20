@@ -85,7 +85,6 @@ class XikijBridge
     @requests = {}
 
   response: (s) ->
-    debugger
 
     console.log "response: #{s}"
 
@@ -103,7 +102,6 @@ class XikijBridge
 
       if response.process
         request.response = new ProcessProvider(@, request)
-        debugger
         request.deferred.resolve(request.response)
 
       else if response.cnk
@@ -160,8 +158,6 @@ class XikijBridge
   request: (context, cmd, args...) ->
 
     uid = uuid.v4()
-
-    debugger
 
     @requests[uid] = req =
       context: context

@@ -135,7 +135,6 @@ module.exports = (Interface) ->
           @first = true
 
         _transform: (chunk, encoding, done) ->
-          console.log "chunk", chunk.toString()
           if @first
             for c,i in chunk
               if c < 7 or (c > 13 and c < 27) or (c < 32 and c > 27)

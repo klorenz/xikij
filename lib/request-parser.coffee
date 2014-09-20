@@ -24,30 +24,37 @@ BUTTON      = /^(\s*)\[(\w+)\](?:\s+\[\w+\])*\s*$/
 
 matchTreeLine = (s) ->
   r = {}
+  # s is like @menuitem
   if m = NODE_LINE_1.exec(s)
     return  indent: m[1], ctx: "@", node: m[2]
 
   r = indent: getIndent(s), ctx: null
+  # s is like something -- here is a comment
   if m = NODE_LINE_COMMENT.exec(s)
     s = m[1]
+  # s is like $ foo bar # here is a comment
   if m = NODE_LINE_PROMPT_COMMENT.exec(s)
     s = m[1]
 
   s = s.replace(/^\s+/, '').replace(/\s+$/, '')
 
+  # s startswith + or -
   if BULLET.test(s)
     s = s[1..].replace(/^\s+/, '')
+
+  # unless s startswith @ or $
   else unless CONTEXT.test(s[0])
-    unless r.indent
-      if s[-1..] == "/"
+    # if r.indent is not set, this might be a path
+    #unless r.indent
+    if s[-1..] == "/"
         #s = s[...-1]
-        r.node = s.split PATH_SEP
+      r.node = s.split PATH_SEP
   #      r.node[r.node.length-1] += "/"
-      else
-        r.node = s.split PATH_SEP
+    else
+      r.node = s.split PATH_SEP
 #     r.node = [ s ]
-      return r
-    return null
+    return r
+    #return null
 
   if s[0] == "@"
     s = s[1...].replace(/^\s+/, '')
@@ -63,6 +70,8 @@ matchTreeLine = (s) ->
   else if s[0] == "`" and s[-2...] == "`_"
     s = s[1...-2]
     r.ctx  = '`'
+  else if s[-1...] == "?"
+    r.ctx = "?"
 
   if s[0] != "$"
     if s[-1..] == "/"
@@ -86,11 +95,23 @@ parseXikiPath = (path) ->
 
   for p,i in np
     if p[...2] == "$ "
+      unless nodePath.length
+        nodePaths.pop()
+
       nodePaths.push [ new PathFragment np[i..].join "/" ]
       break
 
     if p[0] == "@"
+      unless nodePath.length
+        nodePaths.pop()
+
       nodePath = [ new PathFragment strip p[1..] ]
+      nodePaths.push nodePath
+      continue
+
+    if p[-1...] == "?"
+      nodePath.push [ new PathFragment p ]
+      nodePath = []
       nodePaths.push nodePath
       continue
 
@@ -185,7 +206,7 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
     unless line_stripped
       continue
 
-    if mob.ctx is "@"
+    if mob.ctx in [ "@", "?" ]
       more_node_paths = parseXikiPath(mob.node)
       node_paths[-1..] = more_node_paths[0]
       if more_node_paths.length > 1

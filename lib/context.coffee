@@ -14,7 +14,7 @@ class Context
       @PATTERN = new Regexp @PATTERN
 
     @nodePath = null
-    @xikiPath = null
+    @path = null
     @subcontext = null
 
     @weight = 1
@@ -25,14 +25,14 @@ class Context
   CONTEXT: null
   PATTERN: null
 
-  does: (xikiRequest, xikiPath) ->
+  does: (request, requestPath) ->
     if @PATTERN?
-      m = @PATTERN.exec xikiPath.toPath()
+      m = @PATTERN.exec requestPath.toPath()
       if m
         @mob = m
         return true
 
-    return false unless xikiPath
+    return false unless requestPath
 
     # mob contains match object from @PATTERN
 

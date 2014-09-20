@@ -75,7 +75,7 @@ class ModuleLoader
 
     #funcname = "xikij$"+context.moduleName.replace( /\W+/g, "$" )
 
-    vars  = "var menu = this, xikiMenu = this, xikiModule = this";
+    vars  = "var menu = this, xikijMenu = this, xikijModule = this";
 
     # TODO add source map
     # use http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/
@@ -88,15 +88,19 @@ class ModuleLoader
       } }
     """
 
-    @cachedir.then =>
-      @xikij.cacheFile("modules/#{context.moduleName}.js", script).then (filename) =>
+    @cachedir
+      .then =>
+        @xikij.cacheFile("modules/#{context.moduleName}.js", script).then (filename) =>
 
-        #if filename in cache remove from module cache
-        exported = require filename
-        context.result = exported.modfunc.call context, @xikij
+          console.log "importing", filename
 
-        # module.exports may be mutated
-        context
+          #if filename in cache remove from module cache
+          exported = require filename
+          context.result = exported.modfunc.call context, @xikij
+
+          # module.exports may be mutated
+          console.log "have module context", context
+          context
 
   handleError: (pkg, moduleName, error) ->
     pkg.errors = [] unless pkg.errors
@@ -115,6 +119,8 @@ class ModuleLoader
 
     name = entry.replace(/\..*$/, '') # strip extensions
     moduleName = "#{pkg.name}/#{name}"
+
+    console.log "load module #{moduleName}"
 
     xikijData =
       sourceFile: sourceFile

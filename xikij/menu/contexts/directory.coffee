@@ -10,6 +10,20 @@
   - ~PROJECT_NAME/ -- for current project
   """
 
+@docs =
+  '/': """
+    Starting a path with `/`, anchors it in filesystem's root.
+    """
+
+  './': """
+    Starting a path with `./`, anchors it at current directory.  This is
+    context dependend.
+    """
+
+  '~/': """
+    Home directory.
+    """
+
 path = require "path"
 Q = require "q"
 _ = require "underscore"
@@ -24,22 +38,21 @@ class @Directory extends xikij.Context
 
   rootMenuItems: ->
     # where to get project paths? Environment?
-    debugger
     @getProjectDirs().then (result) ->
       result.concat ["~/", "./", "/"]
 
-  does: (xikiRequest, xikiPath) ->
+  does: (request, reqPath) ->
     p        = null
     fsRoot   = null
     menuPath = null
 
-    @input = xikiRequest.input
+    @input = request.input
 
-    @context.shellExpand xikiPath.toPath()
-      .then (xp) =>
-        menuPath = xp
-        debug "xp", xp
-        p = xp.replace("\\", "/").split('/')
+    @context.shellExpand reqPath.toPath()
+      .then (rp) =>
+        menuPath = rp
+        debug "rp", rp
+        p = rp.replace("\\", "/").split('/')
 
         @fileName = null
         @filePath = null
@@ -66,7 +79,7 @@ class @Directory extends xikij.Context
 
         @reject("directory") unless cwd
         @cwd = cwd
-        unless _.last(xikiRequest.nodePaths) is xikiPath
+        unless _.last(request.nodePaths) is reqPath
           debug "is intermediate"
           # intermediate path, which must have an existing directory
           # part, which can serve as cwd
