@@ -72,6 +72,8 @@ matchTreeLine = (s) ->
     r.ctx  = '`'
   else if s[-1...] == "?"
     r.ctx = "?"
+  else if s[-1...] == "*"
+    r.ctx = "*"
 
   if s[0] != "$"
     if s[-1..] == "/"
@@ -110,6 +112,12 @@ parseXikiPath = (path) ->
       continue
 
     if p[-1...] == "?"
+      nodePath.push [ new PathFragment p ]
+      nodePath = []
+      nodePaths.push nodePath
+      continue
+
+    if p[-1...] == "*"
       nodePath.push [ new PathFragment p ]
       nodePath = []
       nodePaths.push nodePath
@@ -206,7 +214,7 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
     unless line_stripped
       continue
 
-    if mob.ctx in [ "@", "?" ]
+    if mob.ctx in [ "@", "?", "*" ]
       more_node_paths = parseXikiPath(mob.node)
       node_paths[-1..] = more_node_paths[0]
       if more_node_paths.length > 1

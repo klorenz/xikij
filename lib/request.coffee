@@ -50,17 +50,14 @@ class Request
             ctx = new ContextClass(context)
 
             Q .fcall =>
-                debugger
                 ctx.does(this, reqPath)
               .then (result) =>
-                debugger
 
                 unless result
                   console.log "reject", reqPath.toPath(), "context", ctx
                   ctx.reject()
 
                 Q.when ctx.getContext(), (ctx) =>
-                  debugger
                   contextsDone.push ctx
                   console.log "contextsDone-ok", contextsDone
 
@@ -138,7 +135,16 @@ class Request
           Q(result).then (r) ->
             deferred.resolve(r)
 
-      .done()
+      .fail (e) =>
+        #console.log e.stack
+        deferred.reject(e)
+
+      # .fail (e) =>
+      #   console.log e.stack
+      #   #deferred.reject(e)
+      #   deferred.resolve(e.stack)
+      #
+      # .done()
 
       # .fail (error) =>
       #   console.debug "getContext failed", error

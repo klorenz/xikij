@@ -164,7 +164,13 @@ describe "Xikij", ->
           expect(response.type).toBe "string"
           expect(response.data).toMatch /^Help for all and everything/  #StartWi xikij.packages.getModule("xikij/contexts/help").doc
 
-      it "can browse files in context of ", ->
+      fit "can manage menu", ->
+        xikij = new Xikij()
+        doPromisedRequest xikij, {body: "menu"}, (response) ->
+          expect(response.type).toBe "string"
+          expect(response.data).toBe ""
+
+      #it "can browse files in context of ", ->
 
 
     describe "passing no path, but a body", ->

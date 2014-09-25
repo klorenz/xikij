@@ -29,6 +29,8 @@ class Package extends EventEmitter
 
     obj
 
+  toString: -> "name: #{@name}"
+
 
 class PackageManager extends EventEmitter
   constructor: (@xikij) ->

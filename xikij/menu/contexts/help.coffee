@@ -25,7 +25,6 @@ class @Help extends xikij.Context
     deferred.promise
 
   does: (request, reqPath) ->
-    debugger
     return false unless m = reqPath.last().match /(.*)\?$/
 
     @weight = reqPath.toPath().length

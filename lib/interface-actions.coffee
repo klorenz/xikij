@@ -14,6 +14,8 @@ module.exports = (Interface) ->
 
     isAction: (name) -> name in ['expand', 'collapse', 'expanded', 'complete']
 
+    getSubject: (req) -> @context.getSubject req
+
 
   Interface.default class Actions extends Actions
 
@@ -37,3 +39,5 @@ module.exports = (Interface) ->
     expanded: (req) -> @expand req
 
     complete: (req) -> Q.fcall -> null
+
+    getSubject: (req) -> Q.fcall -> null

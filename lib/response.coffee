@@ -1,11 +1,13 @@
 {Readable} = require 'stream'
+{Action}   = require "./action"
 
 next_response_id = 1
 class Response
   constructor: (opts) ->
-    {@mimeType, @data} = opts
+    {@mimeType, @data, @type} = opts
     @id = next_response_id++
-    @type = @typeOf(@data)
+    unless @type
+      @type = @typeOf(@data)
 
   typeOf: (x) ->
     type = typeof x
@@ -16,6 +18,8 @@ class Response
         type = "stream"
       if x instanceof Error
         type = "error"
+      if x instanceof Action
+        type = "action"
       if x instanceof Array
         type = "array"
 
@@ -31,8 +35,5 @@ class Response
         type = "nothing"
 
     return type
-
-  # toString: ->
-  #   if @type
 
 module.exports = {Response}

@@ -117,7 +117,7 @@ class @Directory extends xikij.Context
       if @input
         # TODO: store content
         @writeFile @filePath, @input
-        return {message: "saved", action: "message"}
+        return xikij.Action message: "saved", action: "message"
 
       return @openFile @filePath
 

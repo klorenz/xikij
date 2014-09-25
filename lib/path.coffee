@@ -68,12 +68,37 @@ class Path
     else
       @nodePath[index].name
 
+  get: (index) ->
+    return @nodePath[index]
+
   empty: -> @nodePath.length == 0
 
   toPath: ->
     (frag.name for frag in @nodePath).join("/")
 
   toString: -> @toPath()
+
+  selectFromObject: (original, transform, callfunc) ->
+    obj = original
+
+    for frag,i in @nodePath
+      if obj instanceof Array
+        equals = 0
+        for e,i in obj
+          if e.toString() == frag.name
+            if equals == frag.position
+              obj = e
+              break
+        continue
+
+      obj = obj[transform(frag.name)]
+      if obj instanceof Function
+        return callfunc obj, path[i..]
+
+    if obj is original and @nodePath.length > 0
+      throw new Error("path not in object")
+
+    return obj
 
   selectFromText: (context, text) ->
     unless text instanceof stream.Readable

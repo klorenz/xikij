@@ -97,6 +97,8 @@ class ModuleLoader
           #if filename in cache remove from module cache
           exported = require filename
           context.result = exported.modfunc.call context, @xikij
+          if typeof context.result is "undefined"
+            delete context.result
 
           # module.exports may be mutated
           console.log "have module context", context

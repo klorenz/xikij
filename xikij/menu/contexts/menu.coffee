@@ -27,10 +27,9 @@ class @Menu extends xikij.Context
 
     #return false unless reqPath
     @path = reqPath
-    @menuName = rp = reqPath.toPath().replace(/\/$/, '')
+    @menuName = rp = reqPath.toPath().replace(/\/$/, '').replace(/[:*?]\//, '/').replace(/:$/, '')
     @menuPath = null
     @menuDir  = null
-    rp = reqPath.toPath().replace(/\/$/, '')
 
     max_minlen = 0
     for m in xikij.packages.modules()
@@ -84,6 +83,7 @@ class @Menu extends xikij.Context
 
 
   expand: (request) ->
+    debugger
     if @menuDir?
       len = @menuDir.length
       result = []
@@ -96,16 +96,16 @@ class @Menu extends xikij.Context
       return result
 
     if @menuPath?
+      debugger
       path = new Path(@menuPath)
+
       if m = path.first().match /^\.(.*)/
-        method = m[1]
-        if method of @module
-          if typeof @module[method] is "function"
-            return @module[method] request.clone path: path[1..], menuName: @menuName
-          else
-            return @module[method]
-        else
-          throw new Error("method #{method} does not exist in #{@menuName}")
+        return path.selectFromObject(@module,
+          (frag)       -> frag.replace(/^\./, ''),
+          (func, path) => func request.clone {path, @menuName}
+          )
+      # else
+      #   throw new Error("method #{method} does not exist in #{@menuName}")
 
       req = request.clone path: path[1..], menuName: @menuName
       if @module.expand
@@ -113,3 +113,9 @@ class @Menu extends xikij.Context
 
       if @module.menu
         return @module.menu req
+
+  getSubject: (req) ->
+    if @menuDir?
+      Q(null)
+    else
+      Q(@module)

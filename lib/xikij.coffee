@@ -8,6 +8,7 @@ CoffeeScript    = require "coffee-script"
 {XikijBridge}   = require "./xikij-bridge"
 util            = require "./util"
 {Response}      = require "./response"
+{Action}        = require "./action"
 _               = require "underscore"
 Q               = require "q"
 fs              = require "fs"
@@ -29,6 +30,8 @@ class Xikij extends EventEmitter
     Interface  = require './interface'
     @Interface = (require './interfaces')(new Interface())
     @Interface.mixDefaultsInto this
+
+    @Action = Action
 
     @Context = @Interface.mixInto require('./context').Context
     @Q = Q
@@ -95,40 +98,48 @@ class Xikij extends EventEmitter
 
 
   # respond gets a Response object, which contains a type and a stream
-  request: ({path, body, args, action, context}, respond) ->
+  request: ({path, body, args, action, context}, _respond) ->
     @initialized = @initialize() unless @initialized
 
     deferred = Q.defer()
+
+    respond = (response) ->
+      if _respond
+        _respond response
+
+      deferred.resolve response
 
     @initialized.then =>
 
       {parseXikiRequest} = require "./request-parser"
 
-      debugger
       request = parseXikiRequest {path, body, args, action}
 
       context = this unless context
 
-      request.process(context).then (response) ->
-        console.log "xikij request response", response
-        Q .fcall -> response
+      request.process(context)
+        .then (response) ->
+          console.log "xikij request response", response
+          Q .fcall -> response
 
-          .then (response) =>
-            console.log "Q xikij request response", response
+            .then (response) =>
+              console.log "Q xikij request response", response
 
-            unless response instanceof Response
-              response = new Response data: response
+              unless response instanceof Response
+                response = new Response data: response
 
-            if respond
               respond response
 
-            deferred.resolve(response)
+            .fail (error) =>
+              response = new Response data: error, type: "error"
 
-          .fail(error) =>
-            if respond
               respond response
 
-            deferred.resolve(new Response data: error)
+        .fail (error) ->
+          console.log error.stack
+          response = new Response data: error, type: "error"
+
+          respond response
 
           # ( (error) =>
           #   deferred.resolve(new Response error)

@@ -215,9 +215,7 @@ describe "Request Parser", ->
       body = """
         user@host.com:
       """
-      debugger
       parsed = rp.parseXikiRequestFromTree {body}
-      expect(parsed).toBe ""
       expect(parsed).toDeepMatch {
         body: body
         nodePaths: [
