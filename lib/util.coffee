@@ -135,7 +135,11 @@ indented = (thing, indent) ->
   if thing instanceof stream.Readable
     thing.pipe(new Indenter({indent}))
   else
-    indent + thing.toString().replace /\n(?!$)/g, "\n#{indent}"
+    if typeof thing is "undefined"
+      return indent + "[undefined]"
+      #return ""
+    else
+      return indent + thing.toString().replace /\n(?!$)/g, "\n#{indent}"
 
 getOutput = (proc) ->
   deferred = Q.defer()

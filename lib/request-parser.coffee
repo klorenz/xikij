@@ -1,11 +1,11 @@
 # A XikiRequest contains a sequence of XikiPath objects.  Each XikiPath object
 # defines a context, which is the context for next XikiPath object.
 
-{EventEmitter} = require "events"
-
-{Request} = require "./request"
-
+{Request}            = require "./request"
 {Path, PathFragment} = require "./path"
+{last}               = require "underscore"
+
+throw "Path not defined" unless Path
 
 STRING      = /(\\.|[^"\\]+)*/
 INDEX       = /\[(\d+)\](?=\/|$)/
@@ -20,6 +20,7 @@ PATH_SEP    = /(?:\/| -> | → )/
 BUTTON      = /^(\s*)\[(\w+)\](?:\s+\[\w+\])*\s*$/
 
 {getIndent, removeIndent, strip} = require "./util"
+
 
 
 matchTreeLine = (s) ->
@@ -48,10 +49,11 @@ matchTreeLine = (s) ->
     #unless r.indent
     if s[-1..] == "/"
         #s = s[...-1]
-      r.node = s.split PATH_SEP
+      #r.node = s.split PATH_SEP
+      r.node = Path.split s
   #      r.node[r.node.length-1] += "/"
     else
-      r.node = s.split PATH_SEP
+      r.node = Path.split s
 #     r.node = [ s ]
     return r
     #return null
@@ -75,13 +77,14 @@ matchTreeLine = (s) ->
   else if s[-1...] == "*"
     r.ctx = "*"
 
+# TODO: respect quotes and paranthesis
   if s[0] != "$"
     if s[-1..] == "/"
       #s = s[...-1]
-      r.node = s.split PATH_SEP
+      r.node = Path.split(s)
 #      r.node[r.node.length-1] += "/"
     else
-      r.node = s.split PATH_SEP
+      r.node = Path.split(s)
 
     # for i in [0 ... r.node.length]
     #   r.node[i] += '/'
@@ -91,7 +94,7 @@ matchTreeLine = (s) ->
   return r
 
 parseXikiPath = (path) ->
-  np  = path.split /\//
+  np  = Path.split(path)
   nodePath = []
   nodePaths = [nodePath]
 
@@ -223,6 +226,7 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
       continue
 
     _indent = mob.indent
+    continue if indent and _indent.length > indent.length
 
     s = mob.node[0]
     nodes = mob.node[1..]

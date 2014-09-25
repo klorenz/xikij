@@ -2,7 +2,7 @@ path = require "path"
 {EventEmitter} = require "events"
 Q = require "q"
 
-class Package extends EventEmitter
+class Package
 
   constructor: (@dir, @name) ->
     unless @name

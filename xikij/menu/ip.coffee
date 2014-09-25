@@ -3,7 +3,7 @@
     """
 
 # get IP address used for connection to outside
-@menu = ({respond})->
+@run = ({respond})->
   http = require "http"
   http.get "http://google.com", (res) ->
     respond(res.socket.address().address)

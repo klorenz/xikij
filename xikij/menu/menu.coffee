@@ -4,7 +4,7 @@
 
 _ = require "underscore"
 
-@menu = (request) ->
+@run = (request) ->
   if request.path.empty()
     visited = {}
     for m in xikij.packages.modules()

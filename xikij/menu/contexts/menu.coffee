@@ -111,8 +111,8 @@ class @Menu extends xikij.Context
       if @module.expand
         return @module.expand req
 
-      if @module.menu
-        return @module.menu req
+      if @module.run
+        return @module.run req
 
   getSubject: (req) ->
     if @menuDir?

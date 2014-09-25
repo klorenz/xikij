@@ -84,7 +84,7 @@ class LineFinder
       return @doContinue if indent.length > current.length
       essence = line[2...]
 
-      _essence_path = essence.split /\//
+      _essence_path = Path.split(essence)
 
       for p,i in _essence_path
         if p != @path.at(@iPath+i)

@@ -2,6 +2,43 @@
 {last} = require "underscore"
 stream = require "stream"
 
+splitPath = (path) ->
+  tokens = path.split /(\\.|[()\[\]{}<>"'\/])/
+  result = [""]
+  closer = {"{": "}", "(": ")", "[": "]", "<": ">", '"': '"', "'": "'" }
+  stack = []
+  for token in tokens
+    continue unless token.length
+
+    # create new path element
+    if token is "/" and not stack.length
+      result.push ""
+      continue
+
+    if token[0] is "\\"
+      result[result.length-1] += token[1]
+      continue
+
+    result[result.length-1] += token
+
+    if token == last(stack)
+      stack.pop()
+      continue
+
+    if token of closer
+      stack.push closer[token]
+      continue
+
+  return result
+
+joinPath = (args...) ->
+  if args.length == 1 and args[0] instanceof Array
+    args = args[0]
+
+  (arg.replace(/[()\[\]{}<>"'\/]/g, (m) -> "\\#{m}") for arg in args).join("/")
+
+
+
 isEmpty = (l) -> /^\s*$/.test(l)
 INDENT = "  "
 
@@ -10,6 +47,10 @@ class PathFragment
     if typeof @name is "object"
       @position = @name.position
       @name     = @name.name
+
+    if m = @name.match /(.*)\[(\d+)\]$/
+      @name     = m[1]
+      @position = parseInt(m[2])
 
   toString: ->
     if @position > 0
@@ -20,7 +61,15 @@ class PathFragment
 class Path
   constructor: (@nodePath) ->
     if typeof @nodePath is "string"
-      @nodePath = (new PathFragment(x) for x in @nodePath.split("/"))
+      @nodePath = (new PathFragment(x) for x in splitPath(@nodePath))
+
+  # @split: (string) -> splitPath(string)
+  # @join:  (array) -> joinPath(array)
+  # split:  (string) -> splitPath(string)
+  # join:   (array) -> joinPath(array)
+
+  @split: (string) -> splitPath(string)
+  @join: (array) -> joinPath(array)
 
   rooted: ->
     return no if @empty()
@@ -41,8 +90,12 @@ class Path
   clone: ->
     new Path [ new PathFragment(frag) for frag in @nodePath ]
 
-  toArray: ->
-    x.name for x in @nodePath.slice()
+  # string is optional
+  toArray: (string) ->
+    if string
+      splitPath(string)
+    else
+      (x.name for x in @nodePath.slice())
 
   unshift: (thing)->
     if thing instanceof Array
@@ -73,13 +126,15 @@ class Path
 
   empty: -> @nodePath.length == 0
 
-  toPath: ->
-    (frag.name for frag in @nodePath).join("/")
+  toPath: -> joinPath (frag.name for frag in @nodePath)
 
   toString: -> @toPath()
 
   selectFromObject: (original, transform, callfunc) ->
     obj = original
+
+    transform = ((x) -> x) unless transform
+    callfunc  = ((f, p) -> null) unless callfunc
 
     for frag,i in @nodePath
       if obj instanceof Array
@@ -89,11 +144,14 @@ class Path
             if equals == frag.position
               obj = e
               break
+            else
+              equals++
+
         continue
 
       obj = obj[transform(frag.name)]
       if obj instanceof Function
-        return callfunc obj, path[i..]
+        return callfunc obj, @[i..]
 
     if obj is original and @nodePath.length > 0
       throw new Error("path not in object")

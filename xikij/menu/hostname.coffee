@@ -2,6 +2,6 @@
   Print hostname of machine running xikij
   """
 
-@menu = ->
+@run = ->
   os = require "os"
   os.hostname()

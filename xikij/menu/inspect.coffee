@@ -9,7 +9,7 @@
 
 util = require 'util'
 
-@menu = (request) ->
+@run = (request) ->
   if request.path.empty()
     console.log request
     util.inspect request, depth: 0

@@ -211,6 +211,44 @@ describe "Request Parser", ->
       }
       #_nodePath = ({name: f, position: 0} for f in __dirname.split("/"))
 
+    fit "can parse a complex path" , ->
+      body = """
+        hostname*
+          - .package
+            - .modules
+              + [object Object]
+              - [object Object]
+                - .fileName
+                  /home/work
+                - .moduleName
+      """
+
+      parsed = rp.parseXikiRequestFromTree {body}
+      expect(parsed).toDeepMatch {
+        body: body
+        nodePaths: [
+          { nodePath: [
+            {name: "hostname*", position: 0}
+            {name: ".package", position: 0}
+            {name: ".modules", position: 0}
+            {name: "[object Object]", position: 1}
+            {name: ".moduleName", position: 0}
+          ] }
+        ]
+      }
+
+    fit "can parse a complex path 2", ->
+      parsed = rp.parseXikiRequest {path: "foo/bar[2]/"}, ->
+      expect(parsed).toDeepMatch {
+        nodePaths: [
+          { nodePath: [
+            {name: "foo", position: 0}
+            {name: "bar", position: 2}
+          ]}
+        ]
+      }
+
+
     it "can parse a SSH host spec", ->
       body = """
         user@host.com:

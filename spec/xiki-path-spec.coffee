@@ -7,6 +7,10 @@ describe "Xikij Path", ->
     path = new Path "foo/bar"
     expect(path.toPath()).toBe "foo/bar"
 
+  fit "represents also a complex path", ->
+    path = new Path ".package/[Module: xikij/foo/bar]/.moduleName"
+    expect(path.nodePath).toEqual ["x"]
+
   describe "when select a part of xikij document", ->
     xikij = null
     xikijDoc = null
@@ -40,3 +44,37 @@ describe "Xikij Path", ->
         + bar
         + glork
         """
+
+  describe "when select a part of an object", ->
+    object = null
+
+    beforeEach ->
+      object = {
+        "cat": [ "legs", "ears", "eyes" ]
+        "dog": [ {"eats": "dog food"}, {"smells": "well"} ]
+      }
+
+    it "can select cat", ->
+      path = new Path "cat"
+      expect(path.selectFromObject(object)).toEqual object['cat']
+
+    it "can select dog food", ->
+      path = new Path "dog/[object Object]/eats"
+      debugger
+      expect(path.selectFromObject(object)).toEqual "dog food"
+
+    it "can select smells", ->
+      path = new Path "dog/[object Object][1]/smells"
+      debugger
+      expect(path.selectFromObject(object)).toEqual "well"
+
+
+  describe "when you need to split a path", ->
+
+    it "can split path foo/bar", ->
+      xpath = Path.split("foo/bar")
+      expect(xpath).toEqual [ "foo", "bar" ]
+
+    it "can split path foo/[X/Y]/foo", ->
+      xpath = Path.split("foo/[X/Y]/bar")
+      expect(xpath).toEqual [ "foo", "[X/Y]", "bar" ]

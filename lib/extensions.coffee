@@ -100,6 +100,9 @@ class ModuleLoader
           if typeof context.result is "undefined"
             delete context.result
 
+          context.toString = ->
+            "[Module: #{@moduleName}]"
+
           # module.exports may be mutated
           console.log "have module context", context
           context

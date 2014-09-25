@@ -164,7 +164,7 @@ describe "Xikij", ->
           expect(response.type).toBe "string"
           expect(response.data).toMatch /^Help for all and everything/  #StartWi xikij.packages.getModule("xikij/contexts/help").doc
 
-      fit "can manage menu", ->
+      it "can manage menu", ->
         xikij = new Xikij()
         doPromisedRequest xikij, {body: "menu"}, (response) ->
           expect(response.type).toBe "string"
