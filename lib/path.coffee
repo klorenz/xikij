@@ -1,8 +1,10 @@
 {getIndent, startsWith, endsWith, strip, StringReader} = require "./util"
-{last} = require "underscore"
+{last, keys} = require "underscore"
 stream = require "stream"
 
 splitPath = (path) ->
+  if not (typeof path is "string")
+    debugger
   tokens = path.split /(\\.|[()\[\]{}<>"'\/])/
   result = [""]
   closer = {"{": "}", "(": ")", "[": "]", "<": ">", '"': '"', "'": "'" }
@@ -35,7 +37,16 @@ joinPath = (args...) ->
   if args.length == 1 and args[0] instanceof Array
     args = args[0]
 
-  (arg.replace(/[()\[\]{}<>"'\/]/g, (m) -> "\\#{m}") for arg in args).join("/")
+  opts = last(args)
+  if typeof opts is "object"
+    args = args[...-1]
+  else
+    opts = {escape: true}
+
+  if opts.escape
+    (arg.replace(/[\\()\[\]{}<>"'\/]/g, (m) -> "\\#{m}") for arg in args).join("/")
+  else
+    return args.join("/")
 
 
 
@@ -60,6 +71,10 @@ class PathFragment
 
 class Path
   constructor: (@nodePath) ->
+    @nodePath = [] unless @nodePath
+
+    if @nodePath instanceof Path
+      @nodePath = (new PathFragment(x) for x in @nodePath.nodePath)
     if typeof @nodePath is "string"
       @nodePath = (new PathFragment(x) for x in splitPath(@nodePath))
 
@@ -126,15 +141,23 @@ class Path
 
   empty: -> @nodePath.length == 0
 
-  toPath: -> joinPath (frag.name for frag in @nodePath)
+  toPath: (opts) ->
+    opts = opts or {}
+    joinPath (frag.name for frag in @nodePath).concat [ opts ]
 
   toString: -> @toPath()
 
-  selectFromObject: (original, transform, callfunc) ->
-    obj = original
+  selectFromObject: (original, opts) ->
+    obj  = original
+    opts = opts or {}
 
-    transform = ((x) -> x) unless transform
-    callfunc  = ((f, p) -> null) unless callfunc
+    transform = opts.transform or ((x) -> x.replace(/^\./, ''))
+    callfunc  = opts.caller    or ((f, p) -> null)
+
+    if 'objects' of opts
+      keysOnly = not opts.objects
+    else
+      keysOnly = true
 
     for frag,i in @nodePath
       if obj instanceof Array
@@ -155,6 +178,12 @@ class Path
 
     if obj is original and @nodePath.length > 0
       throw new Error("path not in object")
+
+    if typeof obj is "string" or obj instanceof Array
+      return obj
+
+    if keysOnly
+      obj = keys(obj)
 
     return obj
 

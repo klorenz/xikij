@@ -5,6 +5,8 @@ stream         = require 'stream'
 path           = require "path"
 Q              = require "q"
 
+getUserHome = -> process.env.HOME || process.env.USERPROFILE
+
 #
 # Response
 #
@@ -80,7 +82,7 @@ parseCommand = (s) ->
     else if m[0] == "'" and m[-1..] == "'"
       result.push m[1...-1].replace('\\\\', '\\').replace('\\"', '"')
     else
-      return null if /(^[|<>]$|^[12]>|`)/.test m
+      return null if /(^(?:[|<>]|&&|\|\|)$|^[12]>|`)/.test m
       result.push m
 
   return result
@@ -92,6 +94,9 @@ makeCommandString = (s) ->
     return '"'+s.replace("\\", "\\\\").replace('"', "\\\"")+'"'
 
 makeCommand = (args...) ->
+  if args.length == 1 and args[0] instanceof Array
+    args = args[0]
+
   result = []
   for arg in args
     if typeof arg is "object"
@@ -238,8 +243,22 @@ makeResponse = (x, annotate) ->
 
   return new Response result, "text/plain", annotate
 
+# Inserts obj into tree using array path
+insertToTree = (path, obj) ->
+  unless path.length
+    throw new Error("path empty")
+
+  key = path[0]
+  if not (key of @)
+    if path.length == 1
+      return @[key] = obj
+    else
+      @[key] = {}
+
+  insertToTree.call @[key], path[1..], obj
+
 module.exports = {consumeStream, isSubClass, getIndent, removeIndent,
   endsWith, startsWith, makeResponse, getOutput, cookCoffee, StringReader,
   indented, Indenter, strip, parseCommand, makeCommand, makeCommandString,
-  splitLines, xikijBridgeScript, isEmpty
+  splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree
 }

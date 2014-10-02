@@ -1,10 +1,12 @@
-{promised}  = require "./util"
-Q = require "q"
-{RejectPath} = require "./context"
+Q               = require "q"
+{promised}      = require "./util"
+{RejectPath}    = require "./context"
+{extend, clone} = require "underscore"
 
 DEBUG = true
 # debug = (args...) ->
 #   console.debug "xikij:Request:", args... if DEBUG
+
 
 unless console.debug
   console.debug = ->
@@ -16,8 +18,12 @@ class Request
     {@body, @nodePaths, @args, @action, @input} = opts
     {@before, @after, @prefix} = opts
 
+    console.log "args2", @args
+
     for k,v of opts
       this[k] = v
+
+    console.log "args3", @args
 
     unless @nodePaths
       @nodePaths = {}
@@ -93,8 +99,8 @@ class Request
 
     pathToArgs
 
-    respond: (responder) ->
-      responder.apply @
+    # respond: (responder) ->
+    #   responder.apply @
 
 
   clone: (opts) ->
@@ -116,17 +122,31 @@ class Request
 
     context.getContextClass()
       .then (Context) =>
+        debugger
 
         # this implements getting things from environment
         class RequestContext extends Context
-          projectDirs: -> Q.fcall -> theRequest.args.projectDirs
-          fileName: -> Q.fcall -> theRequest.args.fileName
+          getProjectDirs: -> Q(theRequest.args.projectDirs)
+          getFileName:    -> Q(theRequest.args.fileName)
+
+          # project dir is dependend on @fileName
+
+          getSettings: (path) ->
+            Q(xikij: extend(
+              {
+                userDir:             getUserHome()
+                xikijUserDirName:    ".xikij"
+                xikijProjectDirName: ".xikij"
+              },
+              theRequest.args))
 
         @getContext(new RequestContext(context)).then (context) =>
           @context = context
           action = @action or "expand"
           result = null
           console.log "CONTEXT for PROCESS", context
+          debugger
+
           if action of context
             result = context[action](this)
 

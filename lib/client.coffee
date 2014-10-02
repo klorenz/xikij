@@ -46,6 +46,7 @@ class XikijClient
 
 
   request: ({path, body, args, action}, respond) ->
+    console.log "args", args
     @_request {path, body, args, action}, respond
 
 module.exports = {XikijClient}

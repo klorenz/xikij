@@ -29,8 +29,19 @@ class @All extends xikij.Context
     else
       @
 
-  expand: (request) ->
+  # expand: (request) ->
+  #   @allOn.getSubject().then (subject) =>
+  #     #(key for )
+  #     result = []
+  #     if subject?
+  #       for key in _.keys subject
+  #         result.push ".#{key}"
+  #
+  #     result
+      
+  expanded: (request) ->
     @allOn.getSubject().then (subject) =>
+      #(key for )
       result = []
       if subject?
         for key in _.keys subject

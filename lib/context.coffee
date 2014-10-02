@@ -19,11 +19,26 @@ class Context
 
     @weight = 1
 
+    @dispatchedContexts = []
+
     #@on "open", (xikiRequest) => @open(xikiRequest)
     #@on "open", (xikiRequest) => @open(xikiRequest)
 
   CONTEXT: null
   PATTERN: null
+
+  dispatch: (method, args) ->
+    context = @context
+    while context
+      console.log "dispatch: try #{method} at context", context
+      
+      if context.hasOwnProperty(method)
+        return context[method].apply @, args
+
+      if context.__proto__.hasOwnProperty(method)
+        return context[method].apply @, args
+
+      context = context.context
 
   does: (request, requestPath) ->
     if @PATTERN?

@@ -6,26 +6,30 @@ class @Execution extends xikij.Context
   PS1 = "$ "
 
   does: (request, reqPath) ->
-    debugger
-    rp = reqPath.toPath()
+    rp = reqPath.toPath escape: false
     return no unless @mob = /^\s*\$\s+(.*)/.exec(rp)
     return yes
 
   expand: (req) ->
+    debugger
     command = @mob[1]
     return "" if /^\s*$/.test command
 
     cmd = parseCommand(command)
+    console.log "cmd", cmd
 
     @getCwd()
       .then (cwd) =>
+        console.log "have cwd"
         opts = {cwd: cwd}
 
         debugger
 
         unless cmd
+          console.log "execute shell:", command
           @executeShell command, opts
         else
+          console.log "execute:", cmd
           @execute cmd.concat([opts])...
 
       .then (proc) =>

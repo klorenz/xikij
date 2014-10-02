@@ -210,8 +210,7 @@ describe "Request Parser", ->
         ]
       }
       #_nodePath = ({name: f, position: 0} for f in __dirname.split("/"))
-
-    fit "can parse a complex path" , ->
+  it "can parse a complex path" , ->
       body = """
         hostname*
           - .package
@@ -236,8 +235,7 @@ describe "Request Parser", ->
           ] }
         ]
       }
-
-    fit "can parse a complex path 2", ->
+  it "can parse a complex path 2", ->
       parsed = rp.parseXikiRequest {path: "foo/bar[2]/"}, ->
       expect(parsed).toDeepMatch {
         nodePaths: [

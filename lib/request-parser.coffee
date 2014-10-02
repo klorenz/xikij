@@ -134,6 +134,8 @@ parseXikiPath = (path) ->
 parseXikiRequest = (request) ->
   {path, body, action, args, req, res} = request
 
+  console.log "parseXikiRequest args", args
+
   input = body || null
   action = action || "expand"
 
@@ -152,6 +154,8 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
 
   action = null unless action
   input  = null
+  if not body
+    body = ""
   lines  = (body.replace(/\s+$/, '')).split(/\n/)
 
   if args
@@ -217,16 +221,16 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
     unless line_stripped
       continue
 
-    if mob.ctx in [ "@", "?", "*" ]
-      more_node_paths = parseXikiPath(mob.node)
-      node_paths[-1..] = more_node_paths[0]
-      if more_node_paths.length > 1
-        node_paths.push mode_node_paths[1..]...
-
-      continue
-
     _indent = mob.indent
     continue if indent and _indent.length > indent.length
+
+    #if mob.ctx in [ "@", "?", "*" ]
+    if mob.ctx in [ "@" ]
+      more_node_paths = parseXikiPath(mob.node[0])
+      node_paths[-1..] = more_node_paths[0]
+      if more_node_paths.length > 1
+        node_paths.push more_node_paths[1..]...
+      continue
 
     s = mob.node[0]
     nodes = mob.node[1..]
@@ -269,13 +273,15 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
 
 
   for np,i in node_paths
+    if not np.reverse
+      debugger
     node_paths[i] = np.reverse()
 
   node_paths.reverse()
 
   nodePaths = (new Path(p) for p in node_paths)
 
-  return new Request {body, nodePaths, input, action}
+  return new Request {body, nodePaths, input, action, args}
 
 
 module.exports = {matchTreeLine, parseXikiRequest, parseXikiPath,

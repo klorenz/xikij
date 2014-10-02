@@ -16,6 +16,13 @@ class @Menu extends xikij.Context
         a[m]
 
   rootMenuItems: () ->
+    # in future rather return object
+    # tree = {}
+    # for m in xikij.packages.modules()
+    #   insertToTree.call tree, Path.split(m.menuName), m
+    #
+    # Q(tree)
+
     result = []
     for m in xikij.packages.modules()
       r = m.menuName.replace(/\/.*/, '')
@@ -23,6 +30,7 @@ class @Menu extends xikij.Context
     Q(result)
 
   does: (request, reqPath) ->
+    debugger
     return no if reqPath.rooted()
 
     #return false unless reqPath
@@ -61,33 +69,37 @@ class @Menu extends xikij.Context
       A collection of menus.  Hit #{xikij.keys.expand} to list available menus.
       """
     else if @menuPath?
-      path = new Path(@menuPath)
+      if @menuPath
+        path = new Path(@menuPath)
 
-      if m = path.first().match /^\.(.*)/
-        method = m[1]
-        if method of @module
-          if @module.docs
-            if method of @module.docs
-              doc = @module.docs[method]
-              if typeof doc is "function"
-                return doc()
+        if m = path.first().match /^\.(.*)/
+          method = m[1]
+          if method of @module
+            if @module.docs
+              if method of @module.docs
+                doc = @module.docs[method]
+                if typeof doc is "function"
+                  return doc()
+                else
+                  return doc
               else
-                return doc
-            else
-              return null
+                return null
 
-        return "%{method} is no method of #{@menuName}"
+          return "%{method} is no method of #{@menuName}"
 
       else
-        return @module.doc
+        if @module.doc instanceof Function
+          return @module.doc()
+        else
+          return @module.doc
 
 
-  expand: (request) ->
+  expanded: (request) ->
     debugger
     if @menuDir?
       len = @menuDir.length
       result = []
-      for m in xiki.packages.modules()
+      for m in xikij.packages.modules()
         if m.menuName[...len] == @menuDir
           item = m.menuName[len+1...].split("/", 1)[0]
           continue unless item
@@ -96,23 +108,27 @@ class @Menu extends xikij.Context
       return result
 
     if @menuPath?
-      debugger
-      path = new Path(@menuPath)
+      if @menuPath
+        path = new Path(@menuPath)
 
-      if m = path.first().match /^\.(.*)/
-        return path.selectFromObject(@module,
-          (frag)       -> frag.replace(/^\./, ''),
-          (func, path) => func request.clone {path, @menuName}
-          )
+        if m = path.first().match /^\.(.*)/
+          if m[1] of @module
+            return path.selectFromObject @module,
+              transform: (frag)       -> frag.replace(/^\./, ''),
+              caller:    (func, path) => func request.clone {path, @menuName}
+
+      else
+        path = new Path()
       # else
       #   throw new Error("method #{method} does not exist in #{@menuName}")
 
-      req = request.clone path: path[1..], menuName: @menuName
+      req = request.clone path: path, menuName: @menuName
+
       if @module.expand
         return @module.expand req
 
       if @module.run
-        return @module.run req
+        return @module.run.call @, req
 
   getSubject: (req) ->
     if @menuDir?

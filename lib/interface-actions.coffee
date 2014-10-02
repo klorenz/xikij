@@ -1,25 +1,40 @@
-Q = require "q"
+# Actions are used
+#
+#
+
+Q          = require "q"
+{keys}     = require "underscore"
+{Readable} = require "stream"
+{Action}   = require "./action"
 
 module.exports = (Interface) ->
   Interface.define class Actions
-    # ### expand
-    #
-    expand: (req) -> @context.expand req
+    # expand an entry one level
+    expand: (args...) -> @dispatch "expand", args
 
-    collapse: (req) -> @context.collapse req
+    # collapse current entry
+    collapse: (args...) -> @dispatch "collapse", args
 
-    expanded: (req) -> @context.expanded req
+    # expand an entry completely.  This works only for objects
+    # and xikij files.
+    expanded: (args...) -> @dispatch "expanded", args
 
-    complete: (req) -> @context.complete req
+    # completion
+    complete: (args...) -> @dispatch "complete", args
 
+    # return true if `name` is an action's name
     isAction: (name) -> name in ['expand', 'collapse', 'expanded', 'complete']
 
-    getSubject: (req) -> @context.getSubject req
-
+    # return subject of a context.  Usually it is context itself, but
+    # in menu context it is selected menu module.
+    #
+    # - req: Request
+    #
+    getSubject: (args...) -> @dispatch "getSubject", args
 
   Interface.default class Actions extends Actions
 
-    expand:   (req) ->
+    expanded:   (req) ->
       @getContexts().then (contexts) =>
         result = []
         promise = Q(result)
@@ -36,8 +51,17 @@ module.exports = (Interface) ->
 
     collapse: (req) -> Q.fcall -> null
 
-    expanded: (req) -> @expand req
-
     complete: (req) -> Q.fcall -> null
 
     getSubject: (req) -> Q.fcall -> null
+
+    expand: (req) ->
+      debugger
+      Q(@expanded(req)).then (result) =>
+        console.log "expand result", result
+        return result if not (typeof result is "object")
+        return result if result instanceof Array
+        return result if result instanceof Buffer
+        return result if result instanceof Action
+        return result if result instanceof Readable
+        return keys result

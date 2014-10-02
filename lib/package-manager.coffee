@@ -42,6 +42,8 @@ class PackageManager extends EventEmitter
     Q.all(@loading).then (result) =>
       @emit "loaded"
       return result
+    .fail (err) =>
+      console.log "err loading packages", err
 
   add: (dir, name) ->
     pkg = new Package dir, name

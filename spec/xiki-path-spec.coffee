@@ -6,8 +6,7 @@ describe "Xikij Path", ->
   it "represents a node path", ->
     path = new Path "foo/bar"
     expect(path.toPath()).toBe "foo/bar"
-
-  fit "represents also a complex path", ->
+  it "represents also a complex path", ->
     path = new Path ".package/[Module: xikij/foo/bar]/.moduleName"
     expect(path.nodePath).toEqual ["x"]
 

@@ -3,8 +3,7 @@
     """
 
 @level = (request) ->
-  request.reply ->
-    if @path.empty()
-      @context.getLogLevel()
-    else
-      @context.setLogLevel @path.toArray()...
+  if request.path.empty()
+    @getLogLevel()
+  else
+    @setLogLevel request.path.toArray()...

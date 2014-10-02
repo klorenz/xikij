@@ -76,3 +76,15 @@ You can call a recipe later like this
 caches the output of some/other/thing by this key.  Each
 time some/other/thing is called in cached context, it is
 retrieved from cache.
+
+
+## Remove Entry
+
+Need a keyboard shortcut to remove a line. ``ctrl+shift+entf`` ?
+Need a keyboard shortcut to remove a line. ``ctrl+entf`` ?
+
+## Quick Open
+
+Need a list of all titles to open a menu entry quickly.
+Maybe from completion? 
+Autocomplete-plus extension?

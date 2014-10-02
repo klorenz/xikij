@@ -24,11 +24,20 @@ getuser = (req) ->
 
 class Xikij extends EventEmitter
 
+  configDefaults:
+    xikij: {
+      userDir:             util.getUserHome()
+      xikijUserDirName:    '.xikij'
+      xikijProjectDirName: '.xikij'
+    }
+
+
+
   constructor: (opts) ->
     opts = opts or {}
 
     Interface  = require './interface'
-    @Interface = (require './interfaces')(new Interface())
+    @Interface = (require './interfaces')(new Interface(this))
     @Interface.mixDefaultsInto this
 
     @Action = Action
@@ -62,6 +71,18 @@ class Xikij extends EventEmitter
     else
       null
 
+  # this method is duplicated in context.coffee
+  dispatch: (method, args) ->
+    debugger
+    context = @context
+    while context
+      if context.hasOwnProperty(method)
+        #context.calling
+        #@dispatchedContexts.push context
+        return context[method].apply @, args
+
+      context = context.context
+
   mixInterfacesInto: (target) ->
     @Interface.mixInto target
 
@@ -84,7 +105,7 @@ class Xikij extends EventEmitter
         for e in entries
           @packages.add path.join(p, e)
 
-    @packages.loaded().fail (err) => console.log err
+    @packages.loaded().fail (err) => console.log err.stack
 
   # GET [action], path, [args]
   GET: (action, path, args=null) ->
@@ -96,65 +117,13 @@ class Xikij extends EventEmitter
 
     @request {path, action, args}
 
-
-  # respond gets a Response object, which contains a type and a stream
-  request: ({path, body, args, action, context}, _respond) ->
-    @initialized = @initialize() unless @initialized
-
-    deferred = Q.defer()
-
-    respond = (response) ->
-      if _respond
-        _respond response
-
-      deferred.resolve response
-
-    @initialized.then =>
-
-      {parseXikiRequest} = require "./request-parser"
-
-      request = parseXikiRequest {path, body, args, action}
-
-      context = this unless context
-
-      request.process(context)
-        .then (response) ->
-          console.log "xikij request response", response
-          Q .fcall -> response
-
-            .then (response) =>
-              console.log "Q xikij request response", response
-
-              unless response instanceof Response
-                response = new Response data: response
-
-              respond response
-
-            .fail (error) =>
-              response = new Response data: error, type: "error"
-
-              respond response
-
-        .fail (error) ->
-          console.log error.stack
-          response = new Response data: error, type: "error"
-
-          respond response
-
-          # ( (error) =>
-          #   deferred.resolve(new Response error)
-          #   if respond
-          #     respons response
-          # ))
-      #.done()
-
-    deferred.promise
-
-
   # TODO make ctx reloadable/overridable
 
   getSearchPath: (type) ->
     @packages.each (pkg) -> path.join pkg.path, type
+
+
+
 
 
 

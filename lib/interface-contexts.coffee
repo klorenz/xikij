@@ -1,19 +1,17 @@
 Q = require "q"
 
-module.exports = (Interface) ->
+module.exports = (Interface, xikij) ->
   Interface.define class Contexts
     # ### expand
     #
-    getContexts: (args...) -> @context.getContexts args...
+    getContexts: (args...) -> @dispatch "getContexts", args
 
-    addContext: (args...) -> @context.addContext args...
+    addContext: (args...) -> @dispatch "addContext", args
 
-    getContextClass: -> Q.fcall =>
-      console.log "this", this
-      if "Context" of this
-        @Context
-      else
-        @context.getContextClass()
+    #getContextClass: (args...) -> @context.getContextClass.call @, args...
+
+    getContextClass: -> @dispatch "getContextClass", args
+
 
   Interface.default class Contexts extends Contexts
 
@@ -21,11 +19,13 @@ module.exports = (Interface) ->
       named = objects?.named? ? false
 
       if named
-        [name, @_context[name]] for name in @_contexts
+        [name, xikij._context[name]] for name in xikij._contexts
       else
-        @_context[name] for name in @_contexts
+        xikij._context[name] for name in xikij._contexts
 
     addContext: (name, ctx) ->
-      if not (name in @_contexts)
-        @_contexts.push name
-      @_context[name] = ctx
+      if not (name in xikij._contexts)
+        xikij._contexts.push name
+      xikij._context[name] = ctx
+
+    getContextClass: -> Q(xikij.Context)

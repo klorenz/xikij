@@ -25,8 +25,6 @@ class @SSH extends xikij.Context
   @bridges: {}
 
   does: (request, reqPath) ->
-    debugger
-
     return false if reqPath.empty()
     reqPath = reqPath.shift() if reqPath.at(0) == ""
 

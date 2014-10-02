@@ -17,47 +17,47 @@ module.exports = (Interface) ->
     DoesNotExist: DoesNotExist
     DoesExist: DoesExist
 
-    isDirectory: (args...) -> @context.isDirectory args...
-    readDir:   (args...) -> @context.readDir args...
-    exists:    (args...) -> @context.exists args...
-    doesExist:    (args...) -> @context.doesExist args...
-    doesntExist:    (args...) -> @context.doesntExist args...
+    isDirectory: (args...) -> @dispatch "isDirectory", args
+    readDir:     (args...) -> @dispatch "readDir", args
+    exists:      (args...) -> @dispatch "exists", args
+    doesExist:   (args...) -> @dispatch "doesExist", args
+    doesntExist: (args...) -> @dispatch "doesntExist", args
 
     # walk path
-    walk:      (args...) -> @context.walk args...
+    walk:      (args...) -> @dispatch "walk", args
 
     # return time of last modification of path
-    getmtime:  (args...) -> @context.getmtime args...
+    getmtime:  (args...) -> @dispatch "getmtime", args
 
     # write content to file at path
-    writeFile: (args...) -> @context.writeFile args...
+    writeFile: (args...) -> @dispatch "writeFile", args
 
-    openFile: (args...) -> @context.openFile args...
+    openFile: (args...) -> @dispatch "openFile", args
 
     # read first count bytes/chars from file.  if no count given, return entire
     # content
-    readFile:  (args...) -> @context.readFile args...
+    readFile:  (args...) -> @dispatch "readFile", args
 
     # return current working directory
-    getCwd:    (args...) -> @context.getCwd args...
+    getCwd: (args...) -> @dispatch "getCwd", args
 
-    makeDirs:  (args...) -> @context.makeDirs args...
+    makeDirs:  (args...) -> @dispatch "makeDirs", args
 
-    listDir:   (args...) -> @context.listDir args...
+    listDir:   (args...) -> @dispatch "listDir", args
 
     # create a temporary file
-    tempFile:  (args...) -> @context.tempFile args...
-    tempDir:  (args...) -> @context.tempDir args...
+    tempFile:  (args...) -> @dispatch "tempFile", args
+    tempDir:  (args...) -> @dispatch "tempDir", args
 
-    cacheFile:  (args...) -> @context.cacheFile args...
-    cacheDir:  (args...) -> @context.cacheDir args...
+    cacheFile:  (args...) -> @dispatch "cacheFile", args
+    cacheDir:  (args...) -> @dispatch "cacheDir", args
 
     # remove
-    remove:    (args...) -> @context.remove args...
+    remove:    (args...) -> @dispatch "remove", args
 
-    isAbs: (args...) -> @context.isAbs args...
+    isAbs: (args...) -> @dispatch "isAbs", args
 
-    symLink: (args...) -> @context.symLink args...
+    symLink: (args...) -> @dispatch "symLink", args
 
   Interface.default class FileSystem extends FileSystem
     #
@@ -305,8 +305,6 @@ module.exports = (Interface) ->
       stat = fs.statSync(filename)
       Q.fcall -> stat.mtime
 
-    getCwd: ->
-      Q.fcall -> path.resolve(".")
 
     isAbs: (dir) ->
       Q.fcall -> path.resolve(dir) == dir
@@ -315,3 +313,10 @@ module.exports = (Interface) ->
       srcpath = srcpath.replace /\/$/, ''
       dstpath = dstpath.replace /\/$/, ''
       Q.fcall -> fs.symlinkSync srcpath, dstpath, type
+
+    getCwd: ->
+      deferred = Q.defer()
+      @getFileName()
+        .then (filename) -> deferred.resolve path.dirname filename
+        .fail (error)    -> deferred.resolve path.resolve "."
+      deferred.promise

@@ -122,7 +122,15 @@ class ModuleLoader
 
     moduleName = ""
 
-    name = entry.replace(/\..*$/, '') # strip extensions
+    name   = entry
+    suffix = ""
+
+    # maybe use path.extname?
+    if m = entry.match /(.*)\.(.*)$/
+      name   = m[1]
+      suffix = m[2]
+
+    name = entry.replace(/()\..*$/, '') # strip extensions
     moduleName = "#{pkg.name}/#{name}"
 
     console.log "load module #{moduleName}"
@@ -132,10 +140,11 @@ class ModuleLoader
       fileName:   sourceFile
       moduleName: moduleName
       menuName:   name
+      menuType:   suffix
       package:    pkg
 
-    switch path.extname(sourceFile)
-      when ".coffee"
+    switch suffix
+      when "coffee"
         return @xikij.readFile(sourceFile).then (content) =>
           @loadCoffeeScript(content.toString(), xikijData)
             .then (context) =>
@@ -146,8 +155,7 @@ class ModuleLoader
                   @xikij.addContext(k,v)
             .fail (error) =>
               @handleError pkg, moduleName, error
-      when ".py"
-        suffix = "py"
+      when "py"
         return @xikij.readFile(sourceFile).then (content) =>
           if content.match /^#!/
             # execute file for menu args-protocol

@@ -1,13 +1,15 @@
 Q = require "q"
 {promised} = require "./util"
 
-module.exports = (Interface) ->
+module.exports = (Interface, xikij) ->
   Interface.define class Env
-    shellExpand: (args...) -> @context.shellExpand args...
-    dirExpand:   (args...) -> @context.dirExpand args...
-    getProjectDirs: (args...) -> @context.getProjectDirs args...
-    getProjectDir:  (args...) -> @context.getProjectDir args...
-    getEnv:         (args...) -> @context.getEnv args...
+    shellExpand:    (args...) -> @dispatch "shellExpand", args
+    dirExpand:      (args...) -> @dispatch "dirExpand", args
+    getProjectDirs: (args...) -> @dispatch "getProjectDirs", args
+    getProjectDir:  (args...) -> @dispatch "getProjectDir", args
+    getUserDir:     (args...) -> @dispatch "getUserDir", args
+    getEnv:         (args...) -> @dispatch "getEnv", args
+    getFileName:    (args...) -> @dispatch "getFileName", args
 
   Interface.default class Env extends Env
     shellExpand: (s) ->
@@ -41,25 +43,58 @@ module.exports = (Interface) ->
       else
         s
 
-    getUserDir: -> Q.fcall -> @getEnv("HOME")
+    getUserDir: ->
+      deferred = Q.defer
+      @getEnv("HOME")
+        .then (result) =>
+          deferred.resolve(result)
+        .fail (error) =>
+          @getEnv("USERPROFILE")
+            .then (result) ->
+              deferred.resolve(result)
+            .fail (error) ->
+              deferred.reject(result)
 
-    getProjectDirs: -> Q.fcall -> []
+      deferred.promise
 
     getProjectDir: (name) ->
-      @projectDirs().then (dirs) ->
-        unless dirs.length
-          throw new Error("No project directories defined")
+      deferred = Q.defer()
 
-        return dirs[0] unless name
+      @getProjectDirs()
+        .then (dirs) ->
+          unless dirs.length
+            throw new Error("No project directories defined")
 
-        for d in dirs
-          if path.basename(d) == name
-            return d
+          unless name
+            @fileName()
+              .then (fileName) ->
+                for d in dirs
+                  if not path.relative(fileName, d).match /^\.\./
+                    return deferred.resolve(d)
 
-        throw new Error("Project directory #{name} is not defined")
+                # project dir and fileName unrelated, return first
+                deferred.resolve(dirs[0])
+              .fail (error) ->
+                deferred.resolve(dirs[0])
+
+          return deferred.resolve(dirs[0]) unless name
+
+          for d in dirs
+            if path.basename(d) == name
+              return deferred.resolve(d)
+
+          throw new Error("Project directory #{name} is not defined")
+        .fail (error) ->
+          deferred.reject(error)
+
+      deferred.promise
+
+    getProjectDirs: -> Q.fcall -> []
 
     getEnv: (name) -> Q.fcall ->
       if name
         process.env[name]
       else
         process.env
+
+    getFileName: -> Q.fcall -> throw new Error "filename not defined"
