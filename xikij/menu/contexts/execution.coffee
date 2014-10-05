@@ -1,48 +1,50 @@
-{parseCommand} = require "xikij/util"
+module.exports = (xikij) ->
 
-stream = require "stream"
+  {parseCommand} = xikij.util
 
-class @Execution extends xikij.Context
-  PS1 = "$ "
+  stream = require "stream"
 
-  does: (request, reqPath) ->
-    rp = reqPath.toPath escape: false
-    return no unless @mob = /^\s*\$\s+(.*)/.exec(rp)
-    return yes
+  class @Execution extends xikij.Context
+    PS1 = "$ "
 
-  expand: (req) ->
-    debugger
-    command = @mob[1]
-    return "" if /^\s*$/.test command
+    does: (request, reqPath) ->
+      rp = reqPath.toPath escape: false
+      return no unless @mob = /^\s*\$\s+(.*)/.exec(rp)
+      return yes
 
-    cmd = parseCommand(command)
-    console.log "cmd", cmd
+    expand: (req) ->
+      debugger
+      command = @mob[1]
+      return "" if /^\s*$/.test command
 
-    @getCwd()
-      .then (cwd) =>
-        console.log "have cwd"
-        opts = {cwd: cwd}
+      cmd = parseCommand(command)
+      console.log "cmd", cmd
 
-        debugger
+      @getCwd()
+        .then (cwd) =>
+          console.log "have cwd"
+          opts = {cwd: cwd}
 
-        unless cmd
-          console.log "execute shell:", command
-          @executeShell command, opts
-        else
-          console.log "execute:", cmd
-          @execute cmd.concat([opts])...
+          debugger
 
-      .then (proc) =>
-        debugger
-        output = stream.PassThrough()
+          unless cmd
+            console.log "execute shell:", command
+            @executeShell command, opts
+          else
+            console.log "execute:", cmd
+            @execute cmd.concat([opts])...
 
-        proc.stdout.pipe(output)
-        proc.stderr.pipe(output)
+        .then (proc) =>
+          debugger
+          output = stream.PassThrough()
 
-        if req.input
-          proc.stdin.write(req.input)
-          proc.stdin.end()
+          proc.stdout.pipe(output)
+          proc.stderr.pipe(output)
 
-        output
+          if req.input
+            proc.stdin.write(req.input)
+            proc.stdin.end()
 
-    # we could p.on "close" -> output.write("[error: returned x]") or emit a special event on output
+          output
+
+      # we could p.on "close" -> output.write("[error: returned x]") or emit a special event on output

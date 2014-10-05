@@ -8,7 +8,8 @@ splitPath = (path) ->
   tokens = path.split /(\\.|[()\[\]{}<>"'\/])/
   result = [""]
   closer = {"{": "}", "(": ")", "[": "]", "<": ">", '"': '"', "'": "'" }
-  stack = []
+  special = /^[()\[\]{}<>"'\/]$/
+  stack  = []
   for token in tokens
     continue unless token.length
 
@@ -18,7 +19,10 @@ splitPath = (path) ->
       continue
 
     if token[0] is "\\"
-      result[result.length-1] += token[1]
+      if token[1].match special
+        result[result.length-1] += token[1]
+      else
+        result[result.length-1] += token
       continue
 
     result[result.length-1] += token
@@ -153,26 +157,40 @@ class Path
 
     transform = opts.transform or ((x) -> x.replace(/^\./, ''))
     callfunc  = opts.caller    or ((f, p) -> null)
+    #result    = opts.result    or ((object, p, i) -> {object, path: @p[i..]})
+    found     = opts.found     or ((object, p, i) -> false)
+
 
     if 'objects' of opts
       keysOnly = not opts.objects
     else
-      keysOnly = true
+      keysOnly = false
 
     for frag,i in @nodePath
       if obj instanceof Array
         equals = 0
+        found = no
         for e,i in obj
           if e.toString() == frag.name
             if equals == frag.position
               obj = e
+              found = yes
               break
             else
               equals++
 
+        break unless found
         continue
 
-      obj = obj[transform(frag.name)]
+      key = transform frag.name
+
+      break unless key of obj
+
+      obj = obj[key]
+
+      if have = found obj, @, i
+        return have
+
       if obj instanceof Function
         return callfunc obj, @[i..]
 
@@ -186,6 +204,8 @@ class Path
       obj = keys(obj)
 
     return obj
+
+  selectFromTree: (args...) -> @selectFromObject args...
 
   selectFromText: (context, text) ->
     unless text instanceof stream.Readable

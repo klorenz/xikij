@@ -6,6 +6,7 @@ Q          = require "q"
 {keys}     = require "underscore"
 {Readable} = require "stream"
 {Action}   = require "./action"
+{Response} = require "./response"
 
 module.exports = (Interface) ->
   Interface.define class Actions
@@ -32,6 +33,12 @@ module.exports = (Interface) ->
     #
     getSubject: (args...) -> @dispatch "getSubject", args
 
+    userDialog: (args...) -> @dispatch "userDialog", args
+
+    getUserInput: (args...) -> @dispatch "userInput", args
+
+    osOpen:     (args...) -> @dispatch "osOpen", args
+
   Interface.default class Actions extends Actions
 
     expanded:   (req) ->
@@ -56,12 +63,23 @@ module.exports = (Interface) ->
     getSubject: (req) -> Q.fcall -> null
 
     expand: (req) ->
-      debugger
       Q(@expanded(req)).then (result) =>
         console.log "expand result", result
         return result if not (typeof result is "object")
+        return result if result instanceof Response
         return result if result instanceof Array
         return result if result instanceof Buffer
         return result if result instanceof Action
         return result if result instanceof Readable
         return keys result
+
+    osOpen: (name) ->
+      Q(xikij.Action(action: "osOpen", name: name))
+
+    #userDialog: ()
+
+    getUserInput: (opts) ->
+      name     = opts.name
+      _default = opts.default or ""
+      
+      Q xikij.Action action: "userInput", name: name, default: _default

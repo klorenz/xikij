@@ -82,7 +82,7 @@ parseCommand = (s) ->
     else if m[0] == "'" and m[-1..] == "'"
       result.push m[1...-1].replace('\\\\', '\\').replace('\\"', '"')
     else
-      return null if /(^(?:[|<>]|&&|\|\|)$|^[12]>|`)/.test m
+      return null if /(^(?:[|<>]|&&|\|\||&)$|^[12]>|`|\$)/.test m
       result.push m
 
   return result
@@ -244,21 +244,57 @@ makeResponse = (x, annotate) ->
   return new Response result, "text/plain", annotate
 
 # Inserts obj into tree using array path
-insertToTree = (path, obj) ->
+insertToTree = (path, obj, tree) ->
+  unless tree
+    tree = @
+
   unless path.length
     throw new Error("path empty")
 
   key = path[0]
   if not (key of @)
     if path.length == 1
-      return @[key] = obj
+      return tree[key] = obj
     else
-      @[key] = {}
+      tree[key] = {}
 
-  insertToTree.call @[key], path[1..], obj
+  insertToTree.call tree[key], path[1..], obj
+
+# makeArray paths, [ makeArray=null, ] [ tree=null ]
+#
+# create a tree of objects from an object with filepath keys.
+#
+# You can also pass a different function to make nodepaths from the object's
+# keys.
+#
+# >>> makeTree {"a/b": "x", "a/c": "y", "b": "z"}
+# {"a": {"b": "x", "c": "y"}, "b": "z"}
+#
+makeTree = (paths, tree=null, makeArray=null) ->
+  if tree? and not makeArray?
+    if tree instanceof Function
+      makeArray = tree
+      tree = null
+
+  unless makeArray?
+    makeArray = (x) -> x.split /\//
+
+  unless tree?
+    tree = {}
+
+  if not (paths instanceof Array)
+    for k,v of paths
+      insertToTree.call tree, makeArray(k,v), v
+  else
+    for p in paths
+      if not (p instanceof Array)
+        p = makeArray p
+      insertToTree.call tree, makeArray(p), 1
+
+  return tree
 
 module.exports = {consumeStream, isSubClass, getIndent, removeIndent,
   endsWith, startsWith, makeResponse, getOutput, cookCoffee, StringReader,
   indented, Indenter, strip, parseCommand, makeCommand, makeCommandString,
-  splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree
+  splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree, makeTree
 }

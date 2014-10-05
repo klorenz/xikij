@@ -1,7 +1,8 @@
-@doc = """
-  Print hostname of machine running xikij
-  """
+module.exports =
+  doc: """
+    Print hostname of machine running xikij
+    """
 
-@run = ->
-  os = require "os"
-  os.hostname()
+  run: ->
+    os = require "os"
+    os.hostname()

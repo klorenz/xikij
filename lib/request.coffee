@@ -1,5 +1,5 @@
 Q               = require "q"
-{promised}      = require "./util"
+{promised, getUserHome}      = require "./util"
 {RejectPath}    = require "./context"
 {extend, clone} = require "underscore"
 
@@ -60,12 +60,12 @@ class Request
               .then (result) =>
 
                 unless result
-                  console.log "reject", reqPath.toPath(), "context", ctx
+                  #console.log "reject", reqPath.toPath(), "context", ctx
                   ctx.reject()
 
                 Q.when ctx.getContext(), (ctx) =>
                   contextsDone.push ctx
-                  console.log "contextsDone-ok", contextsDone
+                  #console.log "contextsDone-ok", contextsDone
 
                   unless selectedContext?
                     selectedContext = ctx
@@ -76,21 +76,21 @@ class Request
                     unless selectedContext?
                       selectedContext = context
 
-                    console.log "resolve-ok", reqPath.toPath(), "context", selectedContext
+                    #console.log "resolve-ok", reqPath.toPath(), "context", selectedContext
                     deferred.resolve(selectedContext)
 
               .fail (error) =>
                 if not (ctx in contextsDone)
                   contextsDone.push ctx
 
-                console.log "contextsDone-fail", contextsDone
+                #console.log "contextsDone-fail", contextsDone
 
                 unless error instanceof RejectPath
                   deferred.reject(error)
                 else if contextsDone.length == contexts.length
                   unless selectedContext?
                     selectedContext = context
-                  console.log "resolve-fail", reqPath.toPath(), "context", selectedContext
+                  #console.log "resolve-fail", reqPath.toPath(), "context", selectedContext
                   deferred.resolve(selectedContext)
 
               .done()
@@ -116,7 +116,7 @@ class Request
   # returns context, such that you can react on its result
   process: (context) ->
 
-    theRequest = this
+    opts = @args or {}
 
     deferred = Q.defer()
 
@@ -126,19 +126,22 @@ class Request
 
         # this implements getting things from environment
         class RequestContext extends Context
-          getProjectDirs: -> Q(theRequest.args.projectDirs)
-          getFileName:    -> Q(theRequest.args.fileName)
+          getProjectDirs: -> Q(opts.projectDirs or [])
+          getFileName:    ->
+            unless opts.fileName
+              Q.fcall -> throw new Error("filename not defined")
+            else
+              Q(opts.fileName)
+          getUserDir:     -> Q(opts.userDir or getUserHome())
 
           # project dir is dependend on @fileName
 
           getSettings: (path) ->
-            Q(xikij: extend(
-              {
-                userDir:             getUserHome()
+            Q(xikij: extend({
                 xikijUserDirName:    ".xikij"
                 xikijProjectDirName: ".xikij"
               },
-              theRequest.args))
+              opts))
 
         @getContext(new RequestContext(context)).then (context) =>
           @context = context

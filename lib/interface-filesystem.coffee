@@ -11,7 +11,7 @@ class DoesNotExist extends Error
 class DoesExist extends Error
   constructor: -> super()
 
-module.exports = (Interface) ->
+module.exports = (Interface, xikij) ->
 
   Interface.define class FileSystem
     DoesNotExist: DoesNotExist
@@ -67,7 +67,7 @@ module.exports = (Interface) ->
     tempFile: (name, content, options) ->
       options = {} unless options
 
-      tmpdir = @_tempDir()
+      tmpdir = @self('fsTempDir')()
 
       filename = path.join(tmpdir, name)
 
@@ -76,14 +76,14 @@ module.exports = (Interface) ->
       else
         return Q(filename)
 
-    _tempDir: ->
+    fsTempDir: ->
       unless @_tmpdir
         @_tmpdir = path.join (os.tmpdir or os.tmpDir)(), "xikij", uuid.v4()
         @on 'shutdown', => @remove @_tmpdir
       @_tmpdir
 
     tempDir: (name, create=true) ->
-      tmpdir = @_tempDir()
+      tmpdir = @self('fsTempDir')()
       if name
         dir = path.join tmpdir, name
       else

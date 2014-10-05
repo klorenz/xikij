@@ -1,132 +1,134 @@
-@doc = """
-  This context lets you browse directory
-  trees.  Commands executed in this context
-  are run in current directory as working
-  directory.
+module.exports = (xikij) ->
+  @doc = """
+    This context lets you browse directory
+    trees.  Commands executed in this context
+    are run in current directory as working
+    directory.
 
-  - / -- for root
-  - ~/ -- for home directory
-  - ./ -- for directory of current view
-  - ~PROJECT_NAME/ -- for current project
-  """
-
-@docs =
-  '/': """
-    Starting a path with `/`, anchors it in filesystem's root.
+    - / -- for root
+    - ~/ -- for home directory
+    - ./ -- for directory of current view
+    - ~PROJECT_NAME/ -- for current project
     """
 
-  './': """
-    Starting a path with `./`, anchors it at current directory.  This is
-    context dependend.
-    """
+  @docs =
+    '/': """
+      Starting a path with `/`, anchors it in filesystem's root.
+      """
 
-  '~/': """
-    Home directory.
-    """
+    './': """
+      Starting a path with `./`, anchors it at current directory.  This is
+      context dependend.
+      """
 
-path = require "path"
-Q = require "q"
-_ = require "underscore"
+    '~/': """
+      Home directory.
+      """
 
-DEBUG = true
+  path = require "path"
+  Q = require "q"
+  _ = require "underscore"
 
-debug = (args...) ->
-  console.debug "CTX:Directory:", args... if DEBUG
+  DEBUG = true
 
-class @Directory extends xikij.Context
-  PS1 = "  $ "
+  debug = (args...) ->
+    console.debug "CTX:Directory:", args... if DEBUG
 
-  rootMenuItems: ->
-    # where to get project paths? Environment?
-    @getProjectDirs().then (result) ->
-      result.concat ["~/", "./", "/"]
+  class @Directory extends xikij.Context
+    PS1 = "  $ "
 
-  does: (request, reqPath) ->
-    p        = null
-    fsRoot   = null
-    menuPath = null
+    rootMenuItems: ->
+      # where to get project paths? Environment?
+      @getProjectDirs().then (result) ->
+        result.concat ["~/", "./", "/"]
 
-    @input = request.input
+    does: (request, reqPath) ->
+      p        = null
+      fsRoot   = null
+      menuPath = null
 
-    @context.shellExpand reqPath.toPath()
-      .then (rp) =>
-        menuPath = rp
-        debug "rp", rp
-        p = rp.replace("\\", "/").split('/')
+      @input = request.input
 
-        @fileName = null
-        @filePath = null
+      @context.shellExpand reqPath.toPath()
+        .then (rp) =>
+          menuPath = rp
+          debug "rp", rp
+          p = rp.replace("\\", "/").split('/')
 
-        p[...2].join("/")
+          @fileName = null
+          @filePath = null
 
-      .then (fsRoot) =>
-        @isAbs fsRoot
+          p[...2].join("/")
 
-      .then (isabs) =>
-        if isabs
-          menuPath
+        .then (fsRoot) =>
+          @isAbs fsRoot
 
-        else if p[0] == '.'
-          p = p[1..]
-          @context.getCwd()
-        else if p[0].match /^~/
-          @dirExpand(p.join("/"))
-        else
-          @reject("directory")
+        .then (isabs) =>
+          if isabs
+            menuPath
 
-      .then (cwd) =>
-        debug "cwd1", cwd
-
-        @reject("directory") unless cwd
-        @cwd = cwd
-        unless _.last(request.nodePaths) is reqPath
-          debug "is intermediate"
-          # intermediate path, which must have an existing directory
-          # part, which can serve as cwd
-          @isDirectory(cwd).then (isdir) =>
-            unless isdir
-              dir = path.dirname cwd
-              @isDirectory(dir).then (isdir) =>
-                @reject("#{dir} is no directory") unless isdir
-                @_yes(cwd, false)
-              # TODO: check if assert @filePath exists needed
-            else
-              @_yes(cwd, true)
-        else
-          debug "is last"
-          if menuPath.match /\/$/
-            @_yes(menuPath[...-1], true)
+          else if p[0] == '.'
+            p = p[1..]
+            @context.getCwd()
+          else if p[0].match /^~/
+            @dirExpand(p.join("/"))
           else
-            @_yes(cwd, false)
+            @reject("directory")
 
-  _yes: (filePath, isdir) ->
-    @filePath = filePath
-    @isdir    = isdir
-    @weight   = filePath.length
-    @fileName = path.basename filePath
-    @dirName  = path.dirname filePath
-    if isdir
-      @cwd = @filePath
-    else
-      @cwd = @dirName
-    debug "yes:", filePath
-    yes
+        .then (cwd) =>
+          debug "cwd1", cwd
 
-  expand: ->
-    unless @isdir
-      if @input
-        # TODO: store content
-        @writeFile @filePath, @input
-        return xikij.Action message: "saved", action: "message"
+          @reject("directory") unless cwd
+          @cwd = cwd
+          unless _.last(request.nodePaths) is reqPath
+            debug "is intermediate"
+            # intermediate path, which must have an existing directory
+            # part, which can serve as cwd
+            @isDirectory(cwd).then (isdir) =>
+              unless isdir
+                dir = path.dirname cwd
+                @isDirectory(dir).then (isdir) =>
+                  @reject("#{dir} is no directory") unless isdir
+                  @_yes(cwd, false)
+                # TODO: check if assert @filePath exists needed
+              else
+                @_yes(cwd, true)
+          else
+            debug "is last"
+            if menuPath.match /\/$/
+              @_yes(menuPath[...-1], true)
+            else
+              @_yes(cwd, false)
 
-      return @openFile @filePath
+    _yes: (filePath, isdir) ->
+      @filePath = filePath
+      @isdir    = isdir
+      @weight   = filePath.length
+      @fileName = path.basename filePath
+      @dirName  = path.dirname filePath
+      if isdir
+        @cwd = @filePath
+      else
+        @cwd = @dirName
+      debug "yes:", filePath
+      yes
 
-      # if lines
-      #   unless typeof lines == "string"
-      #     lines = lines.join('')
-      #
-      #   return lines.replace /^/m, "| "
-    else
-      return @readDir @cwd
+    expand: (request) ->
+      console.log "directory request", request
+      unless @isdir
+        if request.input
+          # TODO: store content
+          @writeFile(@filePath, @input)
+          return xikij.Action message: "saved", action: "message"
 
-  getCwd: -> Q.fcall => @cwd
+        return @openFile @filePath
+
+        # if lines
+        #   unless typeof lines == "string"
+        #     lines = lines.join('')
+        #
+        #   return lines.replace /^/m, "| "
+      else
+        return @readDir @cwd
+
+    getCwd: -> Q.fcall => @cwd

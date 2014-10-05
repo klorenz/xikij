@@ -10,8 +10,7 @@ module.exports = (Interface, xikij) ->
 
     #getContextClass: (args...) -> @context.getContextClass.call @, args...
 
-    getContextClass: -> @dispatch "getContextClass", args
-
+    getContextClass: (args...) -> @dispatch "getContextClass", args
 
   Interface.default class Contexts extends Contexts
 

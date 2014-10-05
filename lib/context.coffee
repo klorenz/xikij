@@ -30,8 +30,8 @@ class Context
   dispatch: (method, args) ->
     context = @context
     while context
-      console.log "dispatch: try #{method} at context", context
-      
+      #console.log "dispatch: try #{method} at context", context
+
       if context.hasOwnProperty(method)
         return context[method].apply @, args
 
@@ -39,6 +39,34 @@ class Context
         return context[method].apply @, args
 
       context = context.context
+
+  self: (attr, args...) ->
+    context = @
+
+    found = 0
+    while context
+      if context.hasOwnProperty(attr)
+        result = context[attr]
+        found = 1
+        break
+
+      if context.__proto__.hasOwnProperty(attr)
+        result = context[attr]
+        found = 1
+        break
+
+      context = context.context
+
+    if found
+      if result instanceof Function
+        if args.length
+          return result.apply context, args
+        else
+          return (args...) -> result.apply context, args
+      return result
+
+    return undefined
+
 
   does: (request, requestPath) ->
     if @PATTERN?

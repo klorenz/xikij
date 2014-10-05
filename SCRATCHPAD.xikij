@@ -1,5 +1,13 @@
 
 $ cd .. && pwd
-  /home
-
+  /home/kiwi/work/workspace
 $ echo $PROJECT_DIR
+
+- restart unity:
+   $ unity &> /dev/null & disown
+
+- make someone skype admin:
+
+  /
+
+docs/api

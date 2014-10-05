@@ -1,43 +1,53 @@
-@title   = "Menu Manager"
-@summary = "Create and Edit Menus"
 
-@doc = """
-  Manage menus.
-  """
 
-@settingsDefaults = {
-}
+module.exports = (xikij) ->
 
-{sorted, keys} = require "underscore"
-{insertToTree} = require "xikij/util"
-{Path}         = require "xikij/path"
-path           = require "path"
+  @title   = "Menu Manager"
+  @summary = "Create and Edit Menus"
 
-@run = (request) ->
+  @doc = """
+    Manage menus.
+    """
 
-  tree = {}
-  for m in xikij.packages.modules()
-    insertToTree.call tree, Path.split(m.menuName), m
+  @settingsDefaults = {
+  }
 
-  result = request.path.selectFromObject tree, objects: true
+  {sorted, keys} = require "underscore"
+  {insertToTree} = xikij.util
+  {Path}         = xikij.Path
+  path           = require "path"
 
-  if result.sourceFile
+  @run = (request) ->
+    console.log "menu menu request", request
+    try
+      result = request.path.selectFromObject xikij.packages.getModule()
+    catch error
+      result = null
+
     if request.input
-      debugger
       return @getUserDir().then (userdir) =>
-        menupath = "#{userdir}/.xikij/#{result.menuName}.#{result.menuType}"
+        menuname = request.path.toPath()
+
+        if result?.sourceFile
+          menupath = "#{userdir}/.xikij/#{result.menuName}.#{result.menuType}"
+        else if not result?
+          menupath = "#{userdir}/.xikij/#{menuname}"
+
+          if not path.extname(menupath)
+            menupath += ".xikij"
+        else
+          throw new Error("#{menuname} is a directory")
 
         return @makeDirs(path.dirname menupath).then =>
+          debugger
+          # check input
           @request(
             path:    menupath
             context: request.context
             input:   request.input
             )
 
-    return @openFile(result.sourceFile)
+    else if result?.sourceFile
+      return @openFile(result.sourceFile)
 
-  return result
-
-
-@packages = (request) ->
-  return "hello world"
+    return result

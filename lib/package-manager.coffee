@@ -1,6 +1,9 @@
-path = require "path"
+path           = require "path"
 {EventEmitter} = require "events"
-Q = require "q"
+Q              = require "q"
+{makeTree}     = require "./util"
+{keys}         = require "underscore"
+{Path}         = require "./path"
 
 class Package
 
@@ -10,9 +13,8 @@ class Package
 
     # TODO try also .xikij
 
-
     @dir += "/xikij"
-    @modules = []
+    @modules = {}
     @errors = null
 
   load: (xikij) ->
@@ -29,6 +31,16 @@ class Package
 
     obj
 
+  # run: (request) ->
+  #   tree = makeTree @modules
+  #
+  #   if not request.path.empty()
+  #     obj = request.path.selectFromTree tree
+  #   else
+  #     obj = tree
+  #
+  #   return obj
+
   toString: -> "name: #{@name}"
 
 
@@ -37,6 +49,7 @@ class PackageManager extends EventEmitter
     @_packages = []
     @loading = []
     #@loaded =  # be a promise
+    @_modules = null
 
   loaded: ->
     Q.all(@loading).then (result) =>
@@ -82,15 +95,42 @@ class PackageManager extends EventEmitter
       # 3. all other packages, finally xikijs package
       #
     # else
+
     result = []
     for pkg in @_packages
-      for m in pkg.modules
+      for m of pkg.modules
         result.push m
-    result
+    return result
 
+  getModules: -> @_modules
+
+  # getPackageModule: (name) ->
+  #   for pkg in @_packages
+  #
+  #   if not @_modules? ->
+  #     for
+  #
+
+  # get a module without respect of package (merged packages)
   getModule: (name) ->
-    for pkg in @_packages
-      for m in pkg.modules
-        return m if m.moduleName == name
+
+    if not @_modules?
+      @_modules = {}
+      for pkg in @_packages
+        makeTree pkg.modules, @_modules, (key,value) ->
+          # if value.menuType
+          #   key = "#{key}.#{value.menuType}"
+          key.split("/")[1..]
+
+    unless name?
+      return @_modules
+
+    Path(name).selectFromTree @_modules, found: (object, path, i) ->
+      # if is module
+      if "moduleName" of object
+        return object
+      else
+        false
+
 
 module.exports = {Package, PackageManager}

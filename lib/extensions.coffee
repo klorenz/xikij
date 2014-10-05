@@ -2,7 +2,7 @@ path   = require "path"
 events = require "events"
 fs     = require "fs"
 util   = require "./util"
-_      = require "underscore"
+{extend}      = require "underscore"
 vm     = require "vm"
 Q      = require "q"
 
@@ -23,29 +23,29 @@ class ModuleLoader
     moddir = path.resolve __dirname, "..", "node_modules"
 
     x = @xikij
-    @cachedir = x.cacheDir("modules/node_modules", false)
-      .then (_dir) =>
-        dstdir = _dir
-        x.doesNotExist(_dir)
-      .then =>
-        console.log dstdir, "does not exist"
-        x.makeDirs(dstdir)
-      .then =>
-        x.readDir moddir
-      .then (entries) =>
-        console.log "entries1", entries
-        Q.all (x.symLink("#{moddir}/#{e}", "#{dstdir}/#{e}") for e in entries)
-      .then =>
-        x.makeDirs("#{dstdir}/xikij")
-      .then =>
-        x.readDir "#{__dirname}"
-      .then (entries) =>
-        console.log "entries2", entries
-        Q.all (x.symLink("#{__dirname}/#{e}", "#{dstdir}/xikij/#{e}") for e in entries)
-      .fail (error) =>
-        console.log "init moduleloader error", error
-        if error
-          throw error unless error is x.DoesNotExist or error is x.DoesExist
+    # @cachedir = x.cacheDir("modules/node_modules", false)
+    #   .then (_dir) =>
+    #     dstdir = _dir
+    #     x.doesNotExist(_dir)
+    #   .then =>
+    #     console.log dstdir, "does not exist"
+    #     x.makeDirs(dstdir)
+    #   .then =>
+    #     x.readDir moddir
+    #   .then (entries) =>
+    #     console.log "entries1", entries
+    #     Q.all (x.symLink("#{moddir}/#{e}", "#{dstdir}/#{e}") for e in entries)
+    #   .then =>
+    #     x.makeDirs("#{dstdir}/xikij")
+    #   .then =>
+    #     x.readDir "#{__dirname}"
+    #   .then (entries) =>
+    #     console.log "entries2", entries
+    #     Q.all (x.symLink("#{__dirname}/#{e}", "#{dstdir}/xikij/#{e}") for e in entries)
+    #   .fail (error) =>
+    #     console.log "init moduleloader error", error
+    #     if error
+    #       throw error unless error is x.DoesNotExist or error is x.DoesExist
 
 
   load: (pkg) ->
@@ -56,56 +56,56 @@ class ModuleLoader
       return @xikij.walk dir, (entry) =>
         @loadModule pkg, dir, entry[dir.length+1..]
 
-  loadCoffeeScript: (code, xikijData) ->
-    filename = xikijData.fileName
-
-    compiled = Q.fcall ->
-      o = {filename, sourceMap: on, bare: on}
-      coffeescript.compile code, o
-
-    compiled.then (answer) => @runJavaScript answer.js, filename, xikijData
-
-  runJavaScript: (js, filename, context, sourceMap) ->
-    # TODO
-    # idea is to run each part by part.  maybe md5 hashed names, each part
-    # is executed in same context, each part may be different language
-    # which compiles to javascript
-
-    Module = require 'module'
-
-    #funcname = "xikij$"+context.moduleName.replace( /\W+/g, "$" )
-
-    vars  = "var menu = this, xikijMenu = this, xikijModule = this";
-
-    # TODO add source map
-    # use http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/
-    # sourceMappingURL=path/to/map.file
-    # may also be a inline data:... url see compile-cache of atom
-
-    # put a wrapping function for providing the xiki
-    script = """
-      module.exports = { module: module, modfunc: function (xikij, module) { var xikij = xikij, module = module; #{vars}; #{js}
-      } }
-    """
-
-    @cachedir
-      .then =>
-        @xikij.cacheFile("modules/#{context.moduleName}.js", script).then (filename) =>
-
-          console.log "importing", filename
-
-          #if filename in cache remove from module cache
-          exported = require filename
-          context.result = exported.modfunc.call context, @xikij
-          if typeof context.result is "undefined"
-            delete context.result
-
-          context.toString = ->
-            "[Module: #{@moduleName}]"
-
-          # module.exports may be mutated
-          console.log "have module context", context
-          context
+  # loadCoffeeScript: (code, xikijData) ->
+  #   filename = xikijData.fileName
+  #
+  #   compiled = Q.fcall ->
+  #     o = {filename, sourceMap: on, bare: on}
+  #     coffeescript.compile code, o
+  #
+  #   compiled.then (answer) => @runJavaScript answer.js, filename, xikijData
+  #
+  # runJavaScript: (js, filename, context, sourceMap) ->
+  #   # TODO
+  #   # idea is to run each part by part.  maybe md5 hashed names, each part
+  #   # is executed in same context, each part may be different language
+  #   # which compiles to javascript
+  #
+  #   Module = require 'module'
+  #
+  #   #funcname = "xikij$"+context.moduleName.replace( /\W+/g, "$" )
+  #
+  #   vars  = "var menu = this, xikijMenu = this, xikijModule = this";
+  #
+  #   # TODO add source map
+  #   # use http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/
+  #   # sourceMappingURL=path/to/map.file
+  #   # may also be a inline data:... url see compile-cache of atom
+  #
+  #   # put a wrapping function for providing the xiki
+  #   script = """
+  #     module.exports = { module: module, modfunc: function (xikij, module) { var xikij = xikij, module = module; #{vars}; #{js}
+  #     } }
+  #   """
+  #
+  #   @cachedir
+  #     .then =>
+  #       @xikij.cacheFile("modules/#{context.moduleName}.js", script).then (filename) =>
+  #
+  #         console.log "importing", filename
+  #
+  #         #if filename in cache remove from module cache
+  #         exported = require filename
+  #         context.result = exported.modfunc.call context, @xikij
+  #         if typeof context.result is "undefined"
+  #           delete context.result
+  #
+  #         context.toString = ->
+  #           "[Module: #{@moduleName}]"
+  #
+  #         # module.exports may be mutated
+  #         console.log "have module context", context
+  #         context
 
   handleError: (pkg, moduleName, error) ->
     pkg.errors = [] unless pkg.errors
@@ -118,6 +118,7 @@ class ModuleLoader
 
   loadModule: (pkg, dir, entry) ->
     sourceFile = path.join dir, entry
+
     #name = path.basename sourceFile
 
     moduleName = ""
@@ -143,18 +144,56 @@ class ModuleLoader
       menuType:   suffix
       package:    pkg
 
-    switch suffix
-      when "coffee"
-        return @xikij.readFile(sourceFile).then (content) =>
-          @loadCoffeeScript(content.toString(), xikijData)
-            .then (context) =>
-              pkg.modules.push context
+    # moduleDir = path.dirname(moduleName)
+    # if not moduleDir of pkg.modules
+    #   pkg.modules[moduleDir] = pkg
 
-              for k,v of context
-                if util.isSubClass(v, @xikij.Context)
-                  @xikij.addContext(k,v)
-            .fail (error) =>
-              @handleError pkg, moduleName, error
+    switch suffix
+
+      when "coffee"
+        return Q.fcall =>
+          try
+            refined = factory = require sourceFile
+            if factory instanceof Function
+              refined = factory.call xikijData, @xikij
+
+              # now xikijData may be extended or refined may have data.
+              # what if both present?
+
+              refined = xikijData
+
+              # unless refined
+              #   refined = xikijData
+
+            unless refined.moduleName
+              extend(refined, xikijData)
+
+            pkg.modules[moduleName] = refined
+
+            for k,v of refined
+              if util.isSubClass(v, @xikij.Context)
+                @xikij.addContext k, v
+
+          catch error
+            @handleError pkg, moduleName, error
+
+        # do it like this:
+        #  - require the module
+        #  - if the module returns a function:
+        #    call function with (xikij)
+        #  - if the module returns a class:
+        #    create instance with (xikij)
+
+        # return @xikij.readFile(sourceFile).then (content) =>
+        #   @loadCoffeeScript(content.toString(), xikijData)
+        #     .then (context) =>
+        #       pkg.modules.push context
+        #
+        #       for k,v of context
+        #         if util.isSubClass(v, @xikij.Context)
+        #           @xikij.addContext(k,v)
+        #     .fail (error) =>
+        #       @handleError pkg, moduleName, error
       when "py"
         return @xikij.readFile(sourceFile).then (content) =>
           if content.match /^#!/
@@ -167,15 +206,36 @@ class ModuleLoader
               bridge.request("registerModule", xikijData, content)
                 .then (result) =>
                   module = new BridgedModule bridge, result
-                  pkg.modules.push module
+                  pkg.modules[moduleName] = module
+                  #pkg.modules.push module
 
                   for k,v of context
                     if util.isSubClass(v, @xikij.Context)
                       @xikij.addContext(k,v)
+
                 .fail (error) =>
                   @handleError pkg, moduleName, error
             else
               throw new Error "not implemented"
+
+      # if isexecutable
+      # foo.sh => whatever there comes, if is json compilable or cson compilable
+      # do it and this is result
+      #
+      # foo.sh + => Do a full expanded menu, whatever that means, default same
+      #    like without args
+      #
+      # foo.sh first => expand menu item "first"
+      #
+      #
+      # args are passed as --arg foo or better arg=foo ?
+      #
+      # input is passed as stdin
+      #
+      # result:
+      # - json
+      # - cson
+      # - xikij text (parsed into obj)
 
 
 module.exports = {ModuleLoader}

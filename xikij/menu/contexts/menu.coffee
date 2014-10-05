@@ -1,137 +1,204 @@
-@doc = """
-  Handle Menus.  Menus are simple extensions to xiki-Ray.
-  You have multiple opportunities to add active content to a menu.
-  """
+module.exports = (xikij) ->
+  @doc = """
+    Handle Menus.  Menus are simple extensions to xiki-Ray.
+    You have multiple opportunities to add active content to a menu.
+    """
 
-Q = require "q"
-{Path} = require "xikij/path"
+  Q    = xikij.Q
+  Path = xikij.Path
 
-class @Menu extends xikij.Context
-  _matchPath: (a, b) ->
-    minlen = min(a.length, b.length)
-    if a[...minlen] == b[...minlen]
-      if a.length < b.length
-        b[minlen...]
-      else
-        a[m]
-
-  rootMenuItems: () ->
-    # in future rather return object
-    # tree = {}
-    # for m in xikij.packages.modules()
-    #   insertToTree.call tree, Path.split(m.menuName), m
-    #
-    # Q(tree)
-
-    result = []
-    for m in xikij.packages.modules()
-      r = m.menuName.replace(/\/.*/, '')
-      result.push r unless r in result
-    Q(result)
-
-  does: (request, reqPath) ->
-    debugger
-    return no if reqPath.rooted()
-
-    #return false unless reqPath
-    @path = reqPath
-    @menuName = rp = reqPath.toPath().replace(/\/$/, '').replace(/[:*?]\//, '/').replace(/:$/, '')
-    @menuPath = null
-    @menuDir  = null
-
-    max_minlen = 0
-    for m in xikij.packages.modules()
-      #console.log "mod", m
-      mn = m.menuName
-
-      minlen = Math.min(mn.length, rp.length)
-      continue if minlen < max_minlen
-      continue unless mn[...minlen] == rp[...minlen]
-
-      max_minlen = minlen
-
-      if mn.length <= rp.length
-        @menuPath = rp[minlen...].replace /^\//, ''
-      else
-        @menuDir = mn[minlen...].replace /^\//, ''
-
-      @module = m
-
-    @weight = max_minlen
-
-    return yes if max_minlen
-
-    @reject()
-
-  doc: ->
-    if @menuDir?
-      """
-      A collection of menus.  Hit #{xikij.keys.expand} to list available menus.
-      """
-    else if @menuPath?
-      if @menuPath
-        path = new Path(@menuPath)
-
-        if m = path.first().match /^\.(.*)/
-          method = m[1]
-          if method of @module
-            if @module.docs
-              if method of @module.docs
-                doc = @module.docs[method]
-                if typeof doc is "function"
-                  return doc()
-                else
-                  return doc
-              else
-                return null
-
-          return "%{method} is no method of #{@menuName}"
-
-      else
-        if @module.doc instanceof Function
-          return @module.doc()
+  class @Menu extends xikij.Context
+    _matchPath: (a, b) ->
+      minlen = min(a.length, b.length)
+      if a[...minlen] == b[...minlen]
+        if a.length < b.length
+          b[minlen...]
         else
-          return @module.doc
+          a[m]
 
+    rootMenuItems: () ->
 
-  expanded: (request) ->
-    debugger
-    if @menuDir?
-      len = @menuDir.length
+      # in future rather return object
+      # tree = {}
+      # for m in xikij.packages.modules()
+      #   insertToTree.call tree, Path.split(m.menuName), m
+      #
+      # Q(tree)
+
       result = []
+      debugger
       for m in xikij.packages.modules()
-        if m.menuName[...len] == @menuDir
-          item = m.menuName[len+1...].split("/", 1)[0]
-          continue unless item
-          result.append item
+        r = m.menuName.replace(/\/.*/, '')
+        result.push r unless r in result
+      Q(result)
 
-      return result
+    does: (request, reqPath) ->
+      return no if reqPath.rooted()
 
-    if @menuPath?
-      if @menuPath
-        path = new Path(@menuPath)
+      #@menuName = reqPath.toPath().replace(/\/$/, '').replace(/[:*?]\//, '/').replace(/:$/, '')
 
-        if m = path.first().match /^\.(.*)/
-          if m[1] of @module
-            return path.selectFromObject @module,
-              transform: (frag)       -> frag.replace(/^\./, ''),
-              caller:    (func, path) => func request.clone {path, @menuName}
+      @weight = null
 
+      path = new Path(reqPath.toPath()
+              .replace(/\/$/, '')
+              .replace(/[:*?]\//, '/')
+              .replace(/:$/, '')
+              )
+
+      try
+        path.selectFromTree(
+          xikij.packages.getModule(),
+          found: (o, p, i) =>
+            debugger
+            console.debug "found", o, p, i
+            if o.moduleName?
+              @weight   = reqPath[..i].toPath().length
+              @menuName = o.menuName
+              @menuItem = o
+              @menuPath = p[i+1..]
+              return true
+          )
+        return yes
+
+      catch error
+        console.log "warning in menu.does:", error.stack
+
+      return no
+
+      #return false unless reqPath
+      @path = reqPath
+      @menuName = rp = reqPath.toPath().replace(/\/$/, '').replace(/[:*?]\//, '/').replace(/:$/, '')
+      @menuPath = null
+      @menuDir  = null
+
+      #try
+
+
+      max_minlen = 0
+
+
+      for m in xikij.packages.modules()
+        #console.log "mod", m
+        mn = m.menuName
+
+        minlen = Math.min(mn.length, rp.length)
+        continue if minlen < max_minlen
+        continue unless mn[...minlen] == rp[...minlen]
+
+        max_minlen = minlen
+
+        if mn.length <= rp.length
+          @menuPath = rp[minlen...].replace /^\//, ''
+        else
+          @menuDir = mn[minlen...].replace /^\//, ''
+
+        @module = m
+
+      @weight = max_minlen
+
+      return yes if max_minlen
+
+      @reject()
+
+    doc: ->
+      if @menuDir?
+        """
+        A collection of menus.  Hit #{xikij.keys.expand} to list available menus.
+        """
+      else if @menuPath?
+        if @menuPath
+          path = new Path(@menuPath)
+
+          if m = path.first().match /^\.(.*)/
+            method = m[1]
+            if method of @module
+              if @module.docs
+                if method of @module.docs
+                  doc = @module.docs[method]
+                  if typeof doc is "function"
+                    return doc()
+                  else
+                    return doc
+                else
+                  return null
+
+            return "%{method} is no method of #{@menuName}"
+
+        else
+          if @module.doc instanceof Function
+            return @module.doc()
+          else
+            return @module.doc
+
+    expanded: (request) ->
+      @
+      path     = @menuPath
+      menuName = @menuItem.menuName
+
+      if not path.empty()
+
+        if path.first().replace(/^\./, '') of @menuItem
+
+          return path.selectFromObject @menuItem,
+            transform: (frag) -> frag.replace /^\./, ''
+            caller:    (func, path) -> func request.clone {path, menuName}
+
+      req = request.clone {path, menuName}
+
+      if @menuItem.expanded
+        return @menuItem.expand req
+
+      if @menuItem.expand
+        return @menuItem.expand req
+
+      if @menuItem.run
+        return @menuItem.run.call @, req
+
+      # else it is an object
+      return @menuItem
+
+      debugger
+      if @menuDir?
+        len = @menuDir.length
+        result = []
+        for m in xikij.packages.modules()
+          if m.menuName[...len] == @menuDir
+            item = m.menuName[len+1...].split("/", 1)[0]
+            continue unless item
+            result.append item
+
+        return result
+
+      if @menuPath?
+        if @menuPath
+          path = new Path(@menuPath)
+
+          if m = path.first().match /^\.(.*)/
+            if m[1] of @module
+              return path.selectFromObject @module,
+                transform: (frag)       -> frag.replace(/^\./, ''),
+                caller:    (func, path) => func request.clone {path, @menuName}
+
+        else
+          path = new Path()
+        # else
+        #   throw new Error("method #{method} does not exist in #{@menuName}")
+
+        req = request.clone path: path, menuName: @menuName
+
+        if @module.expand
+          return @module.expand req
+
+        if @module.run
+          return @module.run.call @, req
+
+    getSubject: (req) ->
+      if @menuItem.menuName
+        Q(@menuItem)
       else
-        path = new Path()
+        Q(null)
+
+      # if @menuPath?
+      #   Q(null)
       # else
-      #   throw new Error("method #{method} does not exist in #{@menuName}")
-
-      req = request.clone path: path, menuName: @menuName
-
-      if @module.expand
-        return @module.expand req
-
-      if @module.run
-        return @module.run.call @, req
-
-  getSubject: (req) ->
-    if @menuDir?
-      Q(null)
-    else
-      Q(@module)
+      #   Q(@module)

@@ -1,3 +1,4 @@
+
 menu = ({name, context, body, user}) ->
   name ?= "name"
 

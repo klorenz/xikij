@@ -25,9 +25,10 @@ BUTTON      = /^(\s*)\[(\w+)\](?:\s+\[\w+\])*\s*$/
 
 matchTreeLine = (s) ->
   r = {}
+
   # s is like @menuitem
   if m = NODE_LINE_1.exec(s)
-    return  indent: m[1], ctx: "@", node: m[2]
+    return  indent: m[1], ctx: "@", node: [ m[2] ]
 
   r = indent: getIndent(s), ctx: null
   # s is like something -- here is a comment
@@ -63,6 +64,14 @@ matchTreeLine = (s) ->
     r.ctx = "@"
   else if s[...2] == "$ "
     r.ctx = "$"
+
+  # any non-quoting sequence of nonchars followed by space at start could be
+  # interpreted as prompt.  Each prompt might imply a specific context.
+
+  # any non-quoting sequence of nonchars at end may also mean a specific
+  # context like *, ?
+
+
   else if s[...2] == "``" and s[-2...] == "``"
     s = s[2...-2]
     r.ctx = '``'
@@ -132,11 +141,13 @@ parseXikiPath = (path) ->
 
 
 parseXikiRequest = (request) ->
-  {path, body, action, args, req, res} = request
+  {path, body, action, args, input, req, res} = request
 
   console.log "parseXikiRequest args", args
 
-  input = body || null
+  if not input?
+    input = body || null
+
   action = action || "expand"
 
   # eequest root menu
@@ -234,6 +245,8 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
 
     s = mob.node[0]
     nodes = mob.node[1..]
+
+    console.log "mob", mob
 
     for n in nodes.reverse()
       node_path.push new PathFragment(n)

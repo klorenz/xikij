@@ -9,9 +9,11 @@ CoffeeScript    = require "coffee-script"
 util            = require "./util"
 {Response}      = require "./response"
 {Action}        = require "./action"
+{Path}          = require "./path"
 _               = require "underscore"
 Q               = require "q"
 fs              = require "fs"
+{Context}       = require "./context"
 
 issubclass = (B, A) -> B.prototype instanceof A
 
@@ -22,7 +24,7 @@ getuser = (req) ->
 {PackageManager} = require "./package-manager"
 
 
-class Xikij extends EventEmitter
+class Xikij extends Context
 
   configDefaults:
     xikij: {
@@ -30,7 +32,6 @@ class Xikij extends EventEmitter
       xikijUserDirName:    '.xikij'
       xikijProjectDirName: '.xikij'
     }
-
 
 
   constructor: (opts) ->
@@ -42,7 +43,7 @@ class Xikij extends EventEmitter
 
     @Action = Action
 
-    @Context = @Interface.mixInto require('./context').Context
+    @Context = @Interface.mixInto Context
     @Q = Q
 
     @_contexts = []
@@ -50,8 +51,11 @@ class Xikij extends EventEmitter
 
     @_bridges  = {}
     @_bridges['py'] = new XikijBridge(suffix: "py")
+    @Bridge = XikijBridge
 
     @contentFinder = new ContentFinder this
+    @util = util
+    @Path = Path
 
     # first initialize packages
     @packages   = new PackageManager this
@@ -60,7 +64,10 @@ class Xikij extends EventEmitter
 
     @opts = opts
 
-    @initialized = false
+    @_initStarted   = false
+    @initialization = Q.defer()
+    @initialized    = @initialization.promise
+    @initialize()
 
     # initialized method has been triggered
 #    @_initialized = false
@@ -71,23 +78,16 @@ class Xikij extends EventEmitter
     else
       null
 
-  # this method is duplicated in context.coffee
-  dispatch: (method, args) ->
-    debugger
-    context = @context
-    while context
-      if context.hasOwnProperty(method)
-        #context.calling
-        #@dispatchedContexts.push context
-        return context[method].apply @, args
-
-      context = context.context
+  on: (event, callback) ->
+    console.log "event", event
 
   mixInterfacesInto: (target) ->
     @Interface.mixInto target
 
   initialize: (opts) ->
-    return @initialized if @initialized
+    return @initialized if @_initStarted
+
+    @_initStarted = true
 
     opts = opts or {}
     _.extend @opts, opts
@@ -105,7 +105,12 @@ class Xikij extends EventEmitter
         for e in entries
           @packages.add path.join(p, e)
 
-    @packages.loaded().fail (err) => console.log err.stack
+    @packages.loaded()
+      .then =>
+        @initialization.resolve(true)
+      .fail (err) =>
+        console.log err.stack
+        @initialization.resolve(false)
 
   # GET [action], path, [args]
   GET: (action, path, args=null) ->

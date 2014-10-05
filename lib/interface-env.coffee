@@ -44,7 +44,7 @@ module.exports = (Interface, xikij) ->
         s
 
     getUserDir: ->
-      deferred = Q.defer
+      deferred = Q.defer()
       @getEnv("HOME")
         .then (result) =>
           deferred.resolve(result)

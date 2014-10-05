@@ -1,11 +1,13 @@
-@doc = """
-    Returns IP Address of your computer of current default interface
-    """
+module.exports = (xikij) ->
 
-# get IP address used for connection to outside
-@run = ->
-  http = require "http"
+  @doc = """
+      Returns IP Address of your computer of current default interface
+      """
 
-  @respond (respond) ->
-    http.get "http://google.com", (res) ->
-      respond res.socket.address().address
+  # get IP address used for connection to outside
+  @run = ->
+    http = require "http"
+
+    @respond (respond) ->
+      http.get "http://google.com", (res) ->
+        respond res.socket.address().address

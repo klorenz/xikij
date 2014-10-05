@@ -16,4 +16,9 @@ root@havanna:/var/deploy
   $ ls
 ```
 
-hello world
+Features
+--------
+
+- command line execution works
+- SSH works
+- 

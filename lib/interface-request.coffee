@@ -26,10 +26,9 @@ module.exports = (Interface, xikij) ->
       deferred.promise
 
     # respond gets a Response object, which contains a type and a stream
-    request: ({path, body, args, action, context}, _respond) ->
-      xikij.initialized = xikij.initialize() unless xikij.initialized
+    request: ({path, body, args, action, context, input}, _respond) ->
 
-      debugger
+      #xikij.initialized = xikij.initialize() unless xikij.initialized
 
       deferred = Q.defer()
 
@@ -42,7 +41,7 @@ module.exports = (Interface, xikij) ->
         .then =>
           {parseXikiRequest} = require "./request-parser"
 
-          request = parseXikiRequest {path, body, args, action}
+          request = parseXikiRequest {path, body, args, input, action}
 
           context = this unless context
 
