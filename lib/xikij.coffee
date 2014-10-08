@@ -1,4 +1,3 @@
-debug           = require("debug")('xiki')
 path            = require "path"
 CoffeeScript    = require "coffee-script"
 {EventEmitter}  = require 'events'
