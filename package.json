@@ -1,6 +1,6 @@
 {
   "name": "xikij",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "a Xiki clone",
   "main": "lib/main.js",
   "scripts": {
@@ -23,7 +23,7 @@
   "homepage": "https://github.com/klorenz/xikij-cli",
   "dependencies": {
     "body-parser": "~1.0.0",
-    "coffee-script": "^1.7.1",
+    "coffee-script": "^1.8.0",
     "debug": "~0.7.4",
     "docco": "^0.6.3",
     "express": "~4.2.0",
@@ -32,9 +32,7 @@
     "morgan": "~1.0.0",
     "q": "^1.0.1",
     "underscore": "^1.6.0",
-    "uuid": "^1.4.1",
-    "coffee-script": "^1.8.0"
+    "uuid": "^1.4.1"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }
