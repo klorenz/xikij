@@ -5,7 +5,6 @@
   "main": "lib/main.js",
   "scripts": {
     "test": "cake test",
-    "prepublish": "cake build"
   },
   "repository": {
     "type": "git",
