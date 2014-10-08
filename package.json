@@ -4,7 +4,7 @@
   "description": "a Xiki clone",
   "main": "lib/main.js",
   "scripts": {
-    "test": "cake test",
+    "test": "cake test"
   },
   "repository": {
     "type": "git",
