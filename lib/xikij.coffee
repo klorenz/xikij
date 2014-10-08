@@ -24,7 +24,7 @@ getuser = (req) ->
 {PackageManager} = require "./package-manager"
 
 
-class Xikij extends Context
+class Xikij
 
   configDefaults:
     xikij: {
@@ -44,6 +44,13 @@ class Xikij extends Context
     @Action = Action
 
     @Context = @Interface.mixInto Context
+
+    # need these Context specific methods, to be fully context compatible
+    # beeing a context does not work, because of mixing defaults into this
+    # and interface definitions into Context
+    @dispatch = Context::dispatch
+    @self     = Context::self
+
     @Q = Q
 
     @_contexts = []
@@ -94,7 +101,17 @@ class Xikij extends Context
 
     @packages.add path.normalize path.join __dirname, ".."
 
-    packagesPath = @opts.packagesPath || []
+    # if opts.packages.Path is explicitely false, do not use path
+    # else use default path
+    if @opts.packagesPath is false
+      packagesPath = []
+    else unless @opts.packagesPath?
+      p = path.resolve util.getUserHome(), ".xikij", "packages", "node_modules"
+      packagesPath = []
+      if fs.existsSync p
+        for dir in fs.readdirSync p
+          packagesPath.push path.resolve p, dir
+
     if typeof packagesPath is "string"
       packagesPath = [ packagesPath ]
 

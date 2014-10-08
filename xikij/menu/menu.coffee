@@ -39,7 +39,6 @@ module.exports = (xikij) ->
           throw new Error("#{menuname} is a directory")
 
         return @makeDirs(path.dirname menupath).then =>
-          debugger
           # check input
           @request(
             path:    menupath

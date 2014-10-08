@@ -1,7 +1,6 @@
 
 Object.defineProperty global, '__xikij_stack',
   get: ->
-    debugger
     orig = Error.prepareStackTrace;
     Error.prepareStackTrace = (_, stack) -> stack
     err = new Error;

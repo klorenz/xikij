@@ -13,7 +13,6 @@ module.exports = (xikij) ->
       return yes
 
     expand: (req) ->
-      debugger
       command = @mob[1]
       return "" if /^\s*$/.test command
 
@@ -25,8 +24,6 @@ module.exports = (xikij) ->
           console.log "have cwd"
           opts = {cwd: cwd}
 
-          debugger
-
           unless cmd
             console.log "execute shell:", command
             @executeShell command, opts
@@ -35,7 +32,6 @@ module.exports = (xikij) ->
             @execute cmd.concat([opts])...
 
         .then (proc) =>
-          debugger
           output = stream.PassThrough()
 
           proc.stdout.pipe(output)

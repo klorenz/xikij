@@ -122,7 +122,6 @@ class Request
 
     context.getContextClass()
       .then (Context) =>
-        debugger
 
         # this implements getting things from environment
         class RequestContext extends Context
@@ -148,7 +147,6 @@ class Request
           action = @action or "expand"
           result = null
           console.log "CONTEXT for PROCESS", context
-          debugger
 
           if action of context
             result = context[action](this)

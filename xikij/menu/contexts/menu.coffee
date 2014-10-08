@@ -32,6 +32,22 @@ module.exports = (xikij) ->
         result.push r unless r in result
       Q(result)
 
+    isMenuItem: ->
+      return @menuItem.menuName?
+
+    menuExpand: (req) ->
+      if @menuItem.expanded
+        return @menuItem.expand req
+
+      if @menuItem.expand
+        return @menuItem.expand req
+
+      if @menuItem.run
+        return @menuItem.run.call @, req
+
+      # else it is an object
+      return @menuItem
+
     does: (request, reqPath) ->
       return no if reqPath.rooted()
 
@@ -101,6 +117,18 @@ module.exports = (xikij) ->
       @reject()
 
     doc: ->
+      if not @self('isMenuItem')()
+        return @menuItem
+
+      if @menuPath.empty()
+        if @menuItem.doc instanceof Function
+          return @menuItem.doc()
+        else
+          return @menuItem.doc
+
+      return "Not implemented to get doc from sub-items"
+
+
       if @menuDir?
         """
         A collection of menus.  Hit #{xikij.keys.expand} to list available menus.

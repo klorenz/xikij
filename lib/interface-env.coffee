@@ -61,12 +61,12 @@ module.exports = (Interface, xikij) ->
       deferred = Q.defer()
 
       @getProjectDirs()
-        .then (dirs) ->
+        .then (dirs) =>
           unless dirs.length
             throw new Error("No project directories defined")
 
           unless name
-            @fileName()
+            @getFileName()
               .then (fileName) ->
                 for d in dirs
                   if not path.relative(fileName, d).match /^\.\./

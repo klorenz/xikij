@@ -26,7 +26,6 @@ module.exports = (Interface) ->
     ## @depends: -> [ Interface.FileSystem ]
 
     execute: (args...) ->
-      debugger
       console.log "execute", args
       opts = args.pop()
       unless typeof opts is "object"
@@ -40,7 +39,7 @@ module.exports = (Interface) ->
             opts.cwd = cwd
             console.log "exec getCwd settled"
           .fail (error) ->
-            console.log error
+            console.log error.stack
             console.log "exec getCwd settled"
 
         promises.push promise
@@ -61,7 +60,7 @@ module.exports = (Interface) ->
             opts.env["FILE_NAME"]      = path.basename(filename)
             opts.env["FILE_EXTENSION"] = path.extname(filename)
         .fail (error) ->
-          console.log error
+          console.log error.stack
           console.log "exec getFileName settled"
       promises.push promise
 
@@ -70,7 +69,7 @@ module.exports = (Interface) ->
           opts.env["PROJECT_DIR"]    = projectdir
           console.log "exec getProjectDir settled"
         .fail (error) ->
-          console.log error
+          console.log error.stack
           console.log "exec getProjectDir settled"
       promises.push promise
 
@@ -80,6 +79,8 @@ module.exports = (Interface) ->
         console.log "path", process.env['PATH']
         console.log "spawn", args[0], args[1..], opts
         child_process.spawn args[0], args[1..], opts
+
+      # if args[0] does not exist, we get a ENOENT error
 
 
       ## 'darwin', 'freebsd', 'linux', 'sunos' or 'win32'

@@ -47,17 +47,15 @@ module.exports = (xikij) ->
       fsRoot   = null
       menuPath = null
 
-      @input = request.input
+      @_input = request.input
 
-      @context.shellExpand reqPath.toPath()
+      @shellExpand reqPath.toPath()
         .then (rp) =>
           menuPath = rp
-          debug "rp", rp
-          p = rp.replace("\\", "/").split('/')
 
-          @fileName = null
-          @filePath = null
-
+          @_fileName = null
+          @_filePath = null
+          p = rp.split("/")
           p[...2].join("/")
 
         .then (fsRoot) =>
@@ -66,20 +64,18 @@ module.exports = (xikij) ->
         .then (isabs) =>
           if isabs
             menuPath
-
-          else if p[0] == '.'
-            p = p[1..]
-            @context.getCwd()
+          else if p[0] in [".", ".."]
+            @getCwd().then (cwd) =>
+              path.normalize path.resolve cwd, p.join("/")
           else if p[0].match /^~/
             @dirExpand(p.join("/"))
           else
             @reject("directory")
 
         .then (cwd) =>
-          debug "cwd1", cwd
-
           @reject("directory") unless cwd
-          @cwd = cwd
+          debugger
+
           unless _.last(request.nodePaths) is reqPath
             debug "is intermediate"
             # intermediate path, which must have an existing directory
@@ -98,37 +94,31 @@ module.exports = (xikij) ->
             if menuPath.match /\/$/
               @_yes(menuPath[...-1], true)
             else
-              @_yes(cwd, false)
+              @isDirectory(cwd).then (isdir) =>
+                @_yes(cwd, isdir)
 
     _yes: (filePath, isdir) ->
-      @filePath = filePath
-      @isdir    = isdir
-      @weight   = filePath.length
-      @fileName = path.basename filePath
-      @dirName  = path.dirname filePath
+      @_filePath = filePath
+      @_isdir    = isdir
+      @weight    = filePath.length
+      @_fileName = path.basename filePath
+      @_dirName  = path.dirname filePath
       if isdir
-        @cwd = @filePath
+        @_cwd = @_filePath
       else
-        @cwd = @dirName
+        @_cwd = @_dirName
       debug "yes:", filePath
       yes
 
     expand: (request) ->
-      console.log "directory request", request
-      unless @isdir
+      unless @_isdir
         if request.input
-          # TODO: store content
-          @writeFile(@filePath, @input)
+          @writeFile(@_filePath, request.input)
           return xikij.Action message: "saved", action: "message"
 
-        return @openFile @filePath
+        return @openFile @_filePath
 
-        # if lines
-        #   unless typeof lines == "string"
-        #     lines = lines.join('')
-        #
-        #   return lines.replace /^/m, "| "
       else
-        return @readDir @cwd
+        return @readDir @_cwd
 
-    getCwd: -> Q.fcall => @cwd
+    getCwd: -> Q(@_cwd)

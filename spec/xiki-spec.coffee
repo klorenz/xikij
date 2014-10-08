@@ -168,7 +168,18 @@ describe "Xikij", ->
         xikij = new Xikij()
         doPromisedRequest xikij, {body: "menu"}, (response) ->
           expect(response.type).toBe "string"
-          expect(response.data).toBe ""
+          expect(response.data).toBe """
+            + amazon
+            + bookmarklet
+            + contexts
+            + docs
+            + hostname
+            + inspect
+            + ip
+            + log
+            + menu\n
+          """
+
 
       #it "can browse files in context of ", ->
 

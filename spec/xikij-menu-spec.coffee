@@ -11,7 +11,7 @@ describe "Menu", ->
           expect(hostname).toEqual os.hostname()
 
 
-  fdescribe "menu manager", ->
+  describe "menu manager", ->
     tempdir = null
     result = null
     data = """
@@ -29,7 +29,6 @@ describe "Menu", ->
           tempdir = _tempdir
 
       waitsForPromise ->
-        debugger
         result = xikij.request path: "menu/amazon", input: data, args: {
           userDir: tempdir
         }

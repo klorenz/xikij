@@ -50,6 +50,11 @@ class ModuleLoader
 
   load: (pkg) ->
     dir = path.join pkg.dir, "menu"
+    unless fs.existsSync dir
+      dir = path.join pkg.dir, "xikij-menu"
+    unless fs.existsSync dir
+      dir = path.join pkg.dir, "xikij", "menu"
+
 
     @xikij.exists(dir).then (exists) =>
       return unless exists
