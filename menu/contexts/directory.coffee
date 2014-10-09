@@ -29,7 +29,7 @@ module.exports = (xikij) ->
   Q = require "q"
   _ = require "underscore"
 
-  DEBUG = true
+  DEBUG = false
 
   debug = (args...) ->
     console.debug "CTX:Directory:", args... if DEBUG
@@ -64,7 +64,6 @@ module.exports = (xikij) ->
             menuPath
           else if p[0] in [".", ".."]
             @context.getCwd().then (cwd) =>
-              debugger
               console.log "getCwd gave", cwd, "p is", p.join("/")
               path.normalize path.resolve cwd, p.join("/")
           else if p[0].match /^~/
@@ -74,7 +73,6 @@ module.exports = (xikij) ->
 
         .then (cwd) =>
           @reject("directory") unless cwd
-          debugger
 
           unless _.last(request.nodePaths) is reqPath
             debug "is intermediate"

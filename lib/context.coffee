@@ -3,6 +3,11 @@ Q = require 'q'
 class RejectPath extends Error
   constructor: (s) -> super()
 
+{hasOwnMethod} = require "./util"
+
+hasOwnMethod = (x, method) ->
+  x.hasOwnProperty(method) or x.__proto__.hasOwnProperty(method)
+
 class Context
 
   NAME: null
@@ -27,18 +32,37 @@ class Context
   CONTEXT: null
   PATTERN: null
 
+  promisedDispatch: (context, method, args) ->
+
+    if hasOwnMethod context, "getSubject"
+      promised = context.getSubject()
+    else
+      promised = Q(null)
+
+    promised.then (subject) =>
+      if subject?
+        if hasOwnMethod subject, method
+          return subject[method].apply @, args
+
+      if hasOwnMethod context, method
+        return context[method].apply @, args
+
+      return @promisedDispatch context.context, method, args
+
+
   dispatch: (method, args) ->
     context = @context
     while context
-      #console.log "dispatch: try #{method} at context", context
 
-      if context.hasOwnProperty(method)
-        return context[method].apply @, args
+      if hasOwnMethod context, "getSubject"
+        return @promisedDispatch context, method, args
 
-      if context.__proto__.hasOwnProperty(method)
+      if hasOwnMethod context, method
         return context[method].apply @, args
 
       context = context.context
+
+    #####
 
   self: (attr, args...) ->
     context = @

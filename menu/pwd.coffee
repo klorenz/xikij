@@ -3,5 +3,4 @@ module.exports = ->
     Print working directory.
   """
   @run = ->
-    debugger
     @getCwd()

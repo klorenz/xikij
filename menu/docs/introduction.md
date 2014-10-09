@@ -36,3 +36,17 @@ running this action will be the new nested content.
 ## List Root Items
 
 Hit `ctrl+return` on an empty line to get a list of available menu items.
+
+
+## Contexts
+
+"@" creates a new context.
+
+```
+  ../
+     @pwd
+```
+
+Difference between "../pwd" and "../@pwd" is that in first case the file
+"pwd" in parent directory is addressed, and in second case the menu "pwd"
+in context of "../" is run.

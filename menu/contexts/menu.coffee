@@ -214,15 +214,15 @@ module.exports = (xikij) ->
 
         req = request.clone path: path, menuName: @menuName
 
-        if @module.expand
-          return @module.expand req
-
         if @module.run
           return @module.run.call @, req
 
     getSubject: (req) ->
       if @menuItem.menuName
-        Q(@menuItem)
+        if @menuItem.init
+          Q(@menuItem.init()).then (value) => value ? @menuItem
+        else
+          Q(@menuItem)
       else
         Q(null)
 
