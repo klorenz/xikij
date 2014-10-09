@@ -55,35 +55,40 @@ class XikijBridge
 
     @cmd = cmdPrefix.concat [ xikijBridge ]
 
-    @bridge = child_process.spawn @cmd[0], @cmd[1..]
+    try
+      @bridge = child_process.spawn @cmd[0], @cmd[1..]
 
-    buffer = ''
-    @bridge.stdout.on "data", (data) =>
-      buffer += data.toString()
-      lines = buffer.split("\n")
-      buffer = lines[lines.length-1]
-      for line in lines[...-1]
-        @response line
+      buffer = ''
+      @bridge.stdout.on "data", (data) =>
+        buffer += data.toString()
+        lines = buffer.split("\n")
+        buffer = lines[lines.length-1]
+        for line in lines[...-1]
+          @response line
 
-    # this is most unlikely, because not specified by protocol
-    @bridge.stdout.on "end", =>
-      if buffer.length
-        @response buffer
+      # this is most unlikely, because not specified by protocol
+      @bridge.stdout.on "end", =>
+        if buffer.length
+          @response buffer
 
-    stderr = ''
-    @bridge.stderr.on "data", (data) =>
-      stderr += data.toString()
-      console.log "err", data.toString()
+      stderr = ''
+      @bridge.stderr.on "data", (data) =>
+        stderr += data.toString()
+        console.log "err", data.toString()
 
-    if onExit
-      @bridge.on "exit", (result) =>
-        if result != 0
-          for uid,request of @requests
-            request.deferred.reject(new Error stderr)
+      if onExit
+        @bridge.on "exit", (result) =>
+          if result != 0
+            for uid,request of @requests
+              request.deferred.reject(new Error stderr)
 
-        onExit()
+          onExit()
 
-    @requests = {}
+      @requests = {}
+
+    catch error
+      console.log error
+      @bridge = error
 
   response: (s) ->
 
@@ -157,6 +162,9 @@ class XikijBridge
     @bridge.stdin.write JSON.stringify(req)+"\n"
 
   request: (context, cmd, args...) ->
+
+    if @bridge instanceof Error
+      throw @bridge
 
     uid = uuid.v4()
 

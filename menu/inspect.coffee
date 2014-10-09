@@ -18,6 +18,8 @@ module.exports = (xikij) ->
       util.inspect request, depth: 0
     else
       list = request.path.toArray()
+      console.log "list", list
+
       parts = []
 
       if list.length % 2 == 1

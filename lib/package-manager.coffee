@@ -11,8 +11,6 @@ class Package
     unless @name
       @name = path.basename(@dir)
 
-    # TODO try also .xikij
-
     @modules = {}
     @errors = null
 
@@ -131,6 +129,9 @@ class PackageManager extends EventEmitter
         return object
       else
         false
+
+  getPackages: ->
+    return @_packages
 
 
 module.exports = {Package, PackageManager}

@@ -192,7 +192,7 @@ class Path
         return have
 
       if obj instanceof Function
-        return callfunc obj, @[i..]
+        return callfunc obj, @[i+1..]
 
     if obj is original and @nodePath.length > 0
       throw new Error("path not in object")

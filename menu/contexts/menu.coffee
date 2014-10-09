@@ -118,13 +118,16 @@ module.exports = (xikij) ->
 
     doc: ->
       if not @self('isMenuItem')()
-        return @menuItem
+        return @self "menuItem"
 
-      if @menuPath.empty()
-        if @menuItem.doc instanceof Function
-          return @menuItem.doc()
+      menuPath = @self "menuPath"
+      menuItem = @self "menuItem"
+
+      if menuPath.empty()
+        if menuItem.doc instanceof Function
+          return menuItem.doc()
         else
-          return @menuItem.doc
+          return menuItem.doc
 
       return "Not implemented to get doc from sub-items"
 
@@ -160,69 +163,40 @@ module.exports = (xikij) ->
 
     expanded: (request) ->
       @
-      path     = @menuPath
-      menuName = @menuItem.menuName
+      path     = @self "menuPath"
+      menuItem = @self "menuItem"
+      menuName = menuItem.menuName
 
       if not path.empty()
 
-        if path.first().replace(/^\./, '') of @menuItem
+        if path.first().replace(/^\./, '') of menuItem
 
-          return path.selectFromObject @menuItem,
+          return path.selectFromObject menuItem,
             transform: (frag) -> frag.replace /^\./, ''
             caller:    (func, path) -> func request.clone {path, menuName}
 
       req = request.clone {path, menuName}
 
-      if @menuItem.expanded
-        return @menuItem.expand req
+      # if @menuItem.expanded
+      #   return @menuItem.expand req
+      #
+      # if @menuItem.expand
+      #   return @menuItem.expand req
 
-      if @menuItem.expand
-        return @menuItem.expand req
-
-      if @menuItem.run
-        return @menuItem.run.call @, req
+      if menuItem.run
+        return menuItem.run.call @, req
 
       # else it is an object
-      return @menuItem
+      return menuItem
 
-      debugger
-      if @menuDir?
-        len = @menuDir.length
-        result = []
-        for m in xikij.packages.modules()
-          if m.menuName[...len] == @menuDir
-            item = m.menuName[len+1...].split("/", 1)[0]
-            continue unless item
-            result.append item
-
-        return result
-
-      if @menuPath?
-        if @menuPath
-          path = new Path(@menuPath)
-
-          if m = path.first().match /^\.(.*)/
-            if m[1] of @module
-              return path.selectFromObject @module,
-                transform: (frag)       -> frag.replace(/^\./, ''),
-                caller:    (func, path) => func request.clone {path, @menuName}
-
-        else
-          path = new Path()
-        # else
-        #   throw new Error("method #{method} does not exist in #{@menuName}")
-
-        req = request.clone path: path, menuName: @menuName
-
-        if @module.run
-          return @module.run.call @, req
 
     getSubject: (req) ->
-      if @menuItem.menuName
-        if @menuItem.init
-          Q(@menuItem.init()).then (value) => value ? @menuItem
+      menuItem = @self "menuItem"
+      if menuItem.menuName
+        if menuItem.init
+          Q(menuItem.init()).then (value) => value ? menuItem
         else
-          Q(@menuItem)
+          Q(menuItem)
       else
         Q(null)
 
