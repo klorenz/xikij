@@ -3,6 +3,7 @@ stream         = require 'stream'
 child_process  = require "child_process"
 uuid           = require "uuid"
 Q              = require "q"
+{xikijBridgeScript} = require "./util"
 {EventEmitter} = require "events"
 
 class OutputProvider extends stream.PassThrough
@@ -47,7 +48,7 @@ class XikijBridge
       suffix = "py"
     unless xikijBridge
       # default is python bridge
-      xikijBridge = path.resolve "#{__dirname}", "..", "xikij/bin/xikijbridge.#{suffix}"
+      xikijBridge = xikijBridgeScript(suffix)
 
     if typeof cmdPrefix is "string"
       cmdPrefix = parseCommand cmdPrefix

@@ -13,7 +13,6 @@ class Package
 
     # TODO try also .xikij
 
-    @dir += "/xikij"
     @modules = {}
     @errors = null
 
@@ -98,8 +97,9 @@ class PackageManager extends EventEmitter
 
     result = []
     for pkg in @_packages
-      for m of pkg.modules
+      for k,m of pkg.modules
         result.push m
+
     return result
 
   getModules: -> @_modules

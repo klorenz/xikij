@@ -62,6 +62,9 @@ matchTreeLine = (s) ->
   if s[0] == "@"
     s = s[1...].replace(/^\s+/, '')
     r.ctx = "@"
+    r.node = [ s ]
+    return r
+
   else if s[...2] == "$ "
     r.ctx = "$"
 

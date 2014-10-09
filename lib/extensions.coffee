@@ -47,19 +47,25 @@ class ModuleLoader
     #     if error
     #       throw error unless error is x.DoesNotExist or error is x.DoesExist
 
+  _loadMenu: (pkg, menuBase) ->
+      dir = path.join pkg.dir, menuBase
+
+      @xikij.exists(dir).then (exists) =>
+        return unless exists
+        return @xikij.walk dir, (entry) =>
+          @loadModule pkg, dir, entry[dir.length+1..]
+
 
   load: (pkg) ->
-    dir = path.join pkg.dir, "menu"
-    unless fs.existsSync dir
-      dir = path.join pkg.dir, "xikij-menu"
-    unless fs.existsSync dir
-      dir = path.join pkg.dir, "xikij", "menu"
+    promises = []
 
+    [ "menu", "menu-"+process.platform ].forEach (menuBase) =>
+      promises.push @_loadMenu pkg, menuBase
 
-    @xikij.exists(dir).then (exists) =>
-      return unless exists
-      return @xikij.walk dir, (entry) =>
-        @loadModule pkg, dir, entry[dir.length+1..]
+    if util.isPosix()
+      promises.push @_loadMenu pkg, "menu-posix"
+
+    return Q.all(promises)
 
   # loadCoffeeScript: (code, xikijData) ->
   #   filename = xikijData.fileName

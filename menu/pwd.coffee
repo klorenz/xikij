@@ -2,4 +2,6 @@ module.exports = ->
   @doc = """
     Print working directory.
   """
-  @run = -> @getCwd()
+  @run = ->
+    debugger
+    @getCwd()

@@ -47,8 +47,6 @@ module.exports = (xikij) ->
       fsRoot   = null
       menuPath = null
 
-      @_input = request.input
-
       @shellExpand reqPath.toPath()
         .then (rp) =>
           menuPath = rp
@@ -65,7 +63,9 @@ module.exports = (xikij) ->
           if isabs
             menuPath
           else if p[0] in [".", ".."]
-            @getCwd().then (cwd) =>
+            @context.getCwd().then (cwd) =>
+              debugger
+              console.log "getCwd gave", cwd, "p is", p.join("/")
               path.normalize path.resolve cwd, p.join("/")
           else if p[0].match /^~/
             @dirExpand(p.join("/"))
@@ -98,27 +98,30 @@ module.exports = (xikij) ->
                 @_yes(cwd, isdir)
 
     _yes: (filePath, isdir) ->
-      @_filePath = filePath
-      @_isdir    = isdir
-      @weight    = filePath.length
-      @_fileName = path.basename filePath
-      @_dirName  = path.dirname filePath
+      @weight = filePath.length
+
+      @_directoryFilePath = filePath
+      @_directoryIsDir    = isdir
+      @_directoryFileName = path.basename filePath
+      @_directoryDirName  = path.dirname filePath
+
       if isdir
-        @_cwd = @_filePath
+        @_directoryCwd = filePath
       else
-        @_cwd = @_dirName
+        @_directoryCwd = @_direcotryDirName
       debug "yes:", filePath
       yes
 
-    expand: (request) ->
-      unless @_isdir
+    expanded: (request) ->
+      unless @self '_directoryIsDir'
+        filePath = @self '_directoryFilePath'
         if request.input
-          @writeFile(@_filePath, request.input)
+          @writeFile(filePath, request.input)
           return xikij.Action message: "saved", action: "message"
 
-        return @openFile @_filePath
+        return @openFile filePath
 
       else
-        return @readDir @_cwd
+        return @readDir @self '_directoryCwd'
 
-    getCwd: -> Q(@_cwd)
+    getCwd: -> Q(@self '_directoryCwd')

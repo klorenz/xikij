@@ -48,7 +48,8 @@ module.exports = (Interface, xikij) ->
           request.process(context)
             .then (response) ->
               console.log "xikij request response", response
-              Q .fcall -> response
+
+              Q(response)
 
                 .then (response) =>
                   console.log "Q xikij request response", response

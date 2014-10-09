@@ -4,7 +4,7 @@ child_process = require "child_process"
 describe "xikijbridge.py", ->
 
   it "can handle requests", ->
-    p = child_process.spawn("#{__dirname}/../xikij/bin/xikijbridge.py")
+    p = child_process.spawn("#{__dirname}/../bin/xikijbridge.py")
     result = ''
     error  = ''
 

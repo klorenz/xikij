@@ -49,7 +49,7 @@ module.exports = (xikij) ->
       else
         @
 
-    expand: (request) ->
+    expanded: (request) ->
       debugger
       if @helpOn.doc
         if typeof @helpOn.doc is "function"

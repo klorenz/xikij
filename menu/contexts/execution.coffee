@@ -12,7 +12,7 @@ module.exports = (xikij) ->
       return no unless @mob = /^\s*\$\s+(.*)/.exec(rp)
       return yes
 
-    expand: (req) ->
+    expanded: (req) ->
       command = @mob[1]
       return "" if /^\s*$/.test command
 

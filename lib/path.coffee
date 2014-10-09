@@ -168,18 +168,18 @@ class Path
 
     for frag,i in @nodePath
       if obj instanceof Array
-        equals = 0
-        found = no
+        _equals = 0
+        _found = no
         for e,i in obj
           if e.toString() == frag.name
-            if equals == frag.position
+            if _equals == frag.position
               obj = e
-              found = yes
+              _found = yes
               break
             else
-              equals++
+              _equals++
 
-        break unless found
+        break unless _found
         continue
 
       key = transform frag.name

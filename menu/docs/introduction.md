@@ -28,7 +28,8 @@ pass nested (indented) content as input to collapsed thing.  Result of
 running this action will be the new nested content.
 
 ```
-    $ echo
+    echo
+       hello world
 
 ```
 

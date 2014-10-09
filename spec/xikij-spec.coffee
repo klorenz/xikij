@@ -6,13 +6,30 @@ _ = require 'underscore'
 
 describe "Xikij", ->
 
+  MENU = """
+    + amazon
+    + bookmarklet
+    + contexts
+    + docs
+    + echo
+    + hostname
+    + inspect
+    + ip
+    + log
+    + menu
+    + pwd\n
+    """
+
   it "should load packages", ->
 
-    xikij = new Xikij()
+    xikij = new Xikij packagesPath: false
     xikij.initialize()
 
     waitsForPromise ->
       xikij.packages.loaded()
+
+
+
 
   # fit "should trigger 'loaded' event for packages", ->
   #   loadedHook = jasmine.createSpy("loadedHook")
@@ -40,12 +57,12 @@ describe "Xikij", ->
   describe "when xiki object has been created", ->
 
     it "should have loaded basic package", ->
-      xiki = new Xikij()
+      xiki = new Xikij packagesPath: false
 
       xiki.packages.loaded().then ->
 
         expect( (pkg.asObject('dir', 'name') for pkg in xiki.packages.all()) ).toEqual [
-          dir: path.resolve(__dirname, "..", "xikij"), name: "xikij"
+          dir: path.resolve(__dirname, ".."), name: "xikij"
           ]
 
         expect( (pkg.asObject('dir', 'name', 'errors') for pkg in xiki.packages.failed()) ).toEqual []
@@ -54,16 +71,21 @@ describe "Xikij", ->
           .toEqual [
             "xikij/amazon"
             "xikij/bookmarklet"
+            "xikij/contexts/all"
             "xikij/contexts/directory"
             "xikij/contexts/execution"
             "xikij/contexts/help"
             "xikij/contexts/menu"
             "xikij/contexts/root"
             "xikij/contexts/ssh"
+            "xikij/docs/api"
+            "xikij/echo"
             "xikij/hostname"
             "xikij/inspect"
             "xikij/ip"
             "xikij/log"
+            "xikij/menu"
+            "xikij/pwd"
           ]
 
         expect( (n for [n,c] in xiki.contexts(named: true)) ).toEqual [
@@ -77,7 +99,8 @@ describe "Xikij", ->
   describe "when you request a xiki response", ->
     describe "when passing 'path'", ->
 
-      doPromisedRequest = (xikij, request, callback) ->
+      doPromisedRequest = (request, callback) ->
+        xikij = new Xikij packagesPath: false
         waitsForPromise ->
           promise = xikij.request(request)
           promise
@@ -85,7 +108,7 @@ describe "Xikij", ->
             .fail (error) -> throw error
 
       it "should handle the path with callback", ->
-        xikij = new Xikij()
+        xikij = new Xikij packagesPath: false
         requestResponded = false
         os = require "os"
 
@@ -97,7 +120,7 @@ describe "Xikij", ->
         waitsFor (-> requestResponded), "xiki command has responded", 1000
 
       it "should handle an empty path", ->
-        xikij = new Xikij()
+        xikij = new Xikij packagesPath: false
         requestResponded = false
         os = require "os"
 
@@ -108,13 +131,7 @@ describe "Xikij", ->
               + ./
               + /
               + ?
-              + amazon
-              + bookmarklet
-              + contexts
-              + hostname
-              + inspect
-              + ip
-              + log\n
+              #{MENU}
             """
 
             requestResponded = true
@@ -122,67 +139,70 @@ describe "Xikij", ->
         waitsFor (-> requestResponded), "xiki command has responded", 1000
 
       it "should handle the path with promise", ->
-        xikij = new Xikij()
         os = require "os"
 
-        doPromisedRequest xikij, {path: "hostname"}, (response) ->
+        doPromisedRequest {path: "hostname"}, (response) ->
           expect(response.data).toEqual os.hostname()
 
       it "can run commands", ->
-        xikij = new Xikij()
         requestResponded = false
 
-        doPromisedRequest xikij, {path: '$ echo "hello world"'}, (response) ->
+        doPromisedRequest {path: '$ echo "hello world"'}, (response) ->
           expect(response.type).toBe "stream"
           consumeStream response.data, (result) ->
             expect(result).toBe "hello world\n"
 
       it "can run commands in contexts", ->
-        xikij = new Xikij()
 
-        doPromisedRequest xikij, {body: "#{__dirname}\n  $ pwd\n"}, (response) ->
+        doPromisedRequest {body: "#{__dirname}\n  $ pwd\n"}, (response) ->
           expect(response.type).toBe "stream"
           consumeStream response.data, (result) ->
             expect(result).toBe "#{__dirname}\n"
 
       it "can run commands via SSH", ->
-        xikij = new Xikij()
         user = process.env['USER']
         body = """
           #{user}@localhost:#{__dirname}
             $ pwd\n
           """
 
-        doPromisedRequest xikij, {body}, (response) ->
+        doPromisedRequest {body}, (response) ->
           expect(response.type).toBe "stream"
           consumeStream response.data, (result) ->
             expect(result).toBe "#{__dirname}\n"
 
       it "can provide help", ->
-        xikij = new Xikij()
-        doPromisedRequest xikij, {body: "?\n"}, (response) ->
+        doPromisedRequest {body: "?\n"}, (response) ->
           expect(response.type).toBe "string"
           expect(response.data).toMatch /^Help for all and everything/  #StartWi xikij.packages.getModule("xikij/contexts/help").doc
 
       it "can manage menu", ->
-        xikij = new Xikij()
-        doPromisedRequest xikij, {body: "menu"}, (response) ->
+        doPromisedRequest {body: "menu"}, (response) ->
           expect(response.type).toBe "string"
-          expect(response.data).toBe """
-            + amazon
-            + bookmarklet
-            + contexts
-            + docs
-            + hostname
-            + inspect
-            + ip
-            + log
-            + menu\n
-          """
+          expect(response.data).toBe MENU
 
+      it "can handle menus in directory ./", ->
+        doPromisedRequest {
+          path: "./@pwd",
+          args: {fileName: __filename}
+        }, (response) ->
+          expect(response.data).toBe __dirname
 
+      it "can handle menus in directory ../", ->
+        doPromisedRequest {
+          path: "../@pwd",
+          args: {fileName: __filename}
+        }, (response) ->
+          expect(response.data).toBe path.resolve __dirname, ".."
+
+      it "can handle menus in directory ~/", ->
+        {getUserHome} = require "../lib/util"
+        doPromisedRequest {
+          path: "~/@pwd",
+          args: {fileName: __filename, userDir: "/tmp" }
+        }, (response) ->
+          expect(response.data).toBe "/tmp"
       #it "can browse files in context of ", ->
-
 
     describe "passing no path, but a body", ->
     describe "passing no path, but a body and parameters", ->

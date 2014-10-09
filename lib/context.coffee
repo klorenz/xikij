@@ -45,6 +45,11 @@ class Context
 
     found = 0
     while context
+      if context.constructor.name == attr
+        result = context
+        found = 1
+        break
+
       if context.hasOwnProperty(attr)
         result = context[attr]
         found = 1

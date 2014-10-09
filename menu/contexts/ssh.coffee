@@ -16,8 +16,7 @@ module.exports = (xikij) ->
       @
       ([\w\-]+(?:\.[\w\-]+)*) # host
       (?::(\d*))?
-      (.*)
-      ///
+      (.*) ///
 
     SETTINGS:
       remoteShell: "bash"
@@ -135,7 +134,7 @@ module.exports = (xikij) ->
 
     writeFile: (path, content) -> @self('sshBridged') "writeFile", path, content
 
-    expand: ->
+    expanded: ->
       cwd = @sshData['cwd'] || "."
       @self('sshBridged') "isDirectory", cwd
         .then (isdir) =>

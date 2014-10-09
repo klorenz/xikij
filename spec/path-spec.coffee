@@ -59,12 +59,10 @@ describe "Xikij Path", ->
 
     it "can select dog food", ->
       path = new Path "dog/[object Object]/eats"
-      debugger
       expect(path.selectFromObject(object)).toEqual "dog food"
 
     it "can select smells", ->
       path = new Path "dog/[object Object][1]/smells"
-      debugger
       expect(path.selectFromObject(object)).toEqual "well"
 
 

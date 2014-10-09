@@ -98,18 +98,23 @@ class Xikij
     opts = opts or {}
     _.extend @opts, opts
 
+    userDir  = @opts.userDir  ? util.getUserHome()
+    userBase = @opts.userBase ? ".xikij"
+
     @packages.add path.normalize path.join __dirname, ".."
+
+    @userPackagesDir = path.resolve userDir, userBase, "packages", "node_modules"
 
     # if opts.packages.Path is explicitely false, do not use path
     # else use default path
     if @opts.packagesPath is false
       packagesPath = []
+
     else unless @opts.packagesPath?
-      p = path.resolve util.getUserHome(), ".xikij", "packages", "node_modules"
       packagesPath = []
-      if fs.existsSync p
-        for dir in fs.readdirSync p
-          packagesPath.push path.resolve p, dir
+      if fs.existsSync @userPackagesDir
+        for dir in fs.readdirSync @userPackagesDir
+          packagesPath.push path.resolve @userPackagesDir, dir
 
     if typeof packagesPath is "string"
       packagesPath = [ packagesPath ]

@@ -73,7 +73,7 @@ parseCommand = (s) ->
       | ('(?:\\.|[^'\\]+)*')
       | (\S+)
     )
-    ///
+///
   for m in s.split commandRegex
     continue if m is undefined
     continue if m == ""
@@ -186,7 +186,7 @@ cookCoffee = (content, done) ->
   done out.join("\n")+"\n", (menu.join("\n")+"\n").replace(/\n{3,}/, "\n\n")
 
 xikijBridgeScript = (suffix="py") ->
-  path.resolve "#{__dirname}", "..", "xikij/bin/xikijbridge.#{suffix}"
+  path.resolve "#{__dirname}", "..", "bin/xikijbridge.#{suffix}"
 
 #
 # Returns a Response object, where value is a stream
@@ -293,8 +293,11 @@ makeTree = (paths, tree=null, makeArray=null) ->
 
   return tree
 
+isPosix = -> not (process.platform is "win32") # but with msys/cygwin!!
+
 module.exports = {consumeStream, isSubClass, getIndent, removeIndent,
   endsWith, startsWith, makeResponse, getOutput, cookCoffee, StringReader,
   indented, Indenter, strip, parseCommand, makeCommand, makeCommandString,
-  splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree, makeTree
+  splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree, makeTree,
+  isPosix
 }
