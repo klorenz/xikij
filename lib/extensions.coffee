@@ -55,15 +55,27 @@ class ModuleLoader
         return @xikij.walk dir, (entry) =>
           @loadModule pkg, dir, entry[dir.length+1..]
 
-
-  load: (pkg) ->
-    promises = []
-
-    [ "menu", "menu-"+process.platform ].forEach (menuBase) =>
-      promises.push @_loadMenu pkg, menuBase
+  # load either an entire package or a
+  load: (pkg, filename) ->
+    bases = [ "menu", "menu-"+process.platform ]
 
     if util.isPosix()
-      promises.push @_loadMenu pkg, "menu-posix"
+      bases.push "menu-posix"
+
+    if filename
+      for base in bases
+        dir = path.join(pkg.dir, base)
+        entry = path.relative dir, filename
+        unless relpath.match /^\.\./
+          return @loadModule pkg, dir, entry
+
+      console.log "nothing to do for #{filename}"
+      return
+
+    promises = []
+
+    bases.forEach (menuBase) =>
+      promises.push @_loadMenu pkg, menuBase
 
     return Q.all(promises)
 
@@ -164,6 +176,10 @@ class ModuleLoader
       when "coffee"
         return Q.fcall =>
           try
+            resolved = require.resolve sourceFile
+            if resolved of require.cache
+              delete require.cache[resolved]
+
             refined = factory = require sourceFile
             if factory instanceof Function
               refined = factory.call xikijData, @xikij

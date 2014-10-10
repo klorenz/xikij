@@ -126,7 +126,7 @@ describe "Request Parser", ->
       expect(parsed.nodePaths[0].toPath()).toBe "/foo/bar/"
 
     it "can parse path $ echo 'hello world'", ->
-      debugger
+
       parsed = rp.parseXikiRequest {path: "$ echo 'hello world'"}, ->
         expect(parsed).toDeepMatch {
           nodePaths: [
@@ -213,7 +213,7 @@ describe "Request Parser", ->
         ]
       }
       #_nodePath = ({name: f, position: 0} for f in __dirname.split("/"))
-  it "can parse a complex path" , ->
+    it "can parse a complex path" , ->
       body = """
         hostname*
           - .package
@@ -238,7 +238,7 @@ describe "Request Parser", ->
           ] }
         ]
       }
-  it "can parse a complex path 2", ->
+    it "can parse a complex path 2", ->
       parsed = rp.parseXikiRequest {path: "foo/bar[2]/"}, ->
       expect(parsed).toDeepMatch {
         nodePaths: [
@@ -264,6 +264,44 @@ describe "Request Parser", ->
         ]
       }
 
+    it "can parse a tree", ->
+      body = """
+        /foo/bar
+          + first/
+          + second/
+          - third/
+            + fourth/
+            - fifth/
+              + file.md
+        """
+
+      parsed = rp.parseXikiRequestFromTree {body}
+      expect(parsed).toDeepMatch {
+        nodePaths: [
+          { nodePath: [
+            {name: ""}
+            {name: "foo"}
+            {name: "bar"}
+            {name: "third"}
+            {name: "fifth"}
+            {name: "file.md"}
+          ]}
+        ]
+      }
+
+    fit "can parse multiple contexts in a tree", ->
+      body = """
+        ./foo/bar
+          @path
+        """
+
+      parsed = rp.parseXikiRequestFromTree {body}
+      expect(parsed).toDeepMatch {
+        nodePaths: [
+          { nodePath: [ {name: "."}, {name: "foo"}, {name: "bar"} ]}
+          { nodePath: [ {name: "path"} ] }
+        ]
+      }
 
       # expect(parsed).toDeepMatch {
       #     body: body

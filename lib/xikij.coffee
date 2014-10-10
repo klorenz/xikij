@@ -103,7 +103,9 @@ class Xikij
 
     @packages.add path.normalize path.join __dirname, ".."
 
-    @userPackagesDir = path.resolve userDir, userBase, "packages", "node_modules"
+    @userPackagesDir = path.resolve userDir, userBase
+
+    #@userPackagesDir = path.resolve userDir, userBase
 
     # if opts.packages.Path is explicitely false, do not use path
     # else use default path
@@ -113,7 +115,11 @@ class Xikij
     else unless @opts.packagesPath?
       packagesPath = []
       if fs.existsSync @userPackagesDir
+
         for dir in fs.readdirSync @userPackagesDir
+          packagesPath.push path.resolve @userPackagesDir, dir
+
+        for dir in fs.readdirSync path.join @userPackagesDir, "node_modules"
           packagesPath.push path.resolve @userPackagesDir, dir
 
     if typeof packagesPath is "string"
@@ -123,6 +129,7 @@ class Xikij
       p = path.normalize(p)
 
       fs.readdir p, (entries) =>
+        return unless entries?
         for e in entries
           @packages.add path.join(p, e)
 

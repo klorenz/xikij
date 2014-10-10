@@ -40,6 +40,7 @@ class Context
       promised = Q(null)
 
     promised.then (subject) =>
+
       if subject?
         if hasOwnMethod subject, method
           return subject[method].apply @, args

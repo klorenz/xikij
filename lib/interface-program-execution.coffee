@@ -52,16 +52,16 @@ module.exports = (Interface) ->
               opts.env[k] = v
           console.log "exec getEnv settled"
 
-      promise = @getFileName()
+      promise = @getFilePath()
         .then (filename) ->
-          console.log "exec getFileName settled"
+          console.log "exec getFilePath settled"
           if filename?
             opts.env["FILE_PATH"]      = filename
             opts.env["FILE_NAME"]      = path.basename(filename)
             opts.env["FILE_EXTENSION"] = path.extname(filename)
         .fail (error) ->
           console.log error.stack
-          console.log "exec getFileName settled"
+          console.log "exec getFilePath settled"
       promises.push promise
 
       promise = @getProjectDir()

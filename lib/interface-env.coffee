@@ -9,7 +9,11 @@ module.exports = (Interface, xikij) ->
     getProjectDir:  (args...) -> @dispatch "getProjectDir", args
     getUserDir:     (args...) -> @dispatch "getUserDir", args
     getEnv:         (args...) -> @dispatch "getEnv", args
-    getFileName:    (args...) -> @dispatch "getFileName", args
+    # return full pathname of file of interest
+    #
+    # this is usually the path of file opened in editor, but also
+    # a {Directory} context provides the path of file referenced.
+    getFilePath:    (args...) -> @dispatch "getFilePath", args
 
   Interface.default class Env extends Env
     shellExpand: (s) ->
@@ -66,7 +70,7 @@ module.exports = (Interface, xikij) ->
             throw new Error("No project directories defined")
 
           unless name
-            @getFileName()
+            @getFilePath()
               .then (fileName) ->
                 for d in dirs
                   if not path.relative(fileName, d).match /^\.\./
@@ -97,4 +101,4 @@ module.exports = (Interface, xikij) ->
       else
         process.env
 
-    getFileName: -> Q.fcall -> throw new Error "filename not defined"
+    getFilePath: -> Q.fcall -> throw new Error "filename not defined"

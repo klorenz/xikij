@@ -26,7 +26,7 @@ module.exports = (xikij) ->
       # Q(tree)
 
       result = []
-      debugger
+      
       for m in xikij.packages.modules()
         r = m.menuName.replace(/\/.*/, '')
         result.push r unless r in result
@@ -65,7 +65,7 @@ module.exports = (xikij) ->
         path.selectFromTree(
           xikij.packages.getModule(),
           found: (o, p, i) =>
-            debugger
+            
             console.debug "found", o, p, i
             if o.moduleName?
               @weight   = reqPath[..i].toPath().length

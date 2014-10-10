@@ -50,7 +50,7 @@ module.exports = (xikij) ->
         @
 
     expanded: (request) ->
-      debugger
+      
       if @helpOn.doc
         if typeof @helpOn.doc is "function"
           Q.when @helpOn.doc(), (doc) =>

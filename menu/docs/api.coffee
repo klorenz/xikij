@@ -1,5 +1,5 @@
 @doc = ->
-  debugger
+  
   result = xikij.Interface.getDoc()
   console.log "api doc", result
   return result

@@ -125,7 +125,7 @@ module.exports = (xikij) ->
     isDirectory: (filename) -> @self('sshBridged') "isDirectory", filename
 
     shellExpand: (name) ->
-      debugger
+      
       @self('sshBridged') "shellExpand", name
 
     openFile: (filename) -> @self('sshBridged') "openFile", filename

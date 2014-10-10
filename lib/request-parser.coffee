@@ -241,17 +241,25 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
     #if mob.ctx in [ "@", "?", "*" ]
     if mob.ctx in [ "@" ]
       more_node_paths = parseXikiPath(mob.node[0])
-      node_paths[-1..] = more_node_paths[0]
+      node_paths[node_paths.length-1] = more_node_paths[0]
       if more_node_paths.length > 1
         node_paths.push more_node_paths[1..]...
+        
+      node_path = []
+      node_paths.push node_path
       continue
 
     s = mob.node[0]
     nodes = mob.node[1..]
 
+    # remove empty path names from intermediate "+ foo/" strings
+    if node_path.length
+      unless nodes[nodes.length-1]
+        nodes.pop()
+
     console.log "mob", mob
 
-    for n in nodes.reverse()
+    for n,i in nodes.reverse()
       node_path.push new PathFragment(n)
 
     if indent is null
@@ -287,10 +295,7 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
   unless node_path.length
     node_paths = node_paths[...-1]
 
-
   for np,i in node_paths
-    if not np.reverse
-      debugger
     node_paths[i] = np.reverse()
 
   node_paths.reverse()

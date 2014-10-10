@@ -31,6 +31,7 @@ class Request
   getContext: (context, reqPath) ->
     unless reqPath
       context = Q(context)
+      
       @nodePaths.forEach (reqPath) =>
         console.log "reqPath"
         context = context.then (ctx) =>
@@ -126,14 +127,14 @@ class Request
         # this implements getting things from environment
         class RequestContext extends Context
           getProjectDirs: -> Q(opts.projectDirs or [])
-          getFileName:    ->
-            unless opts.fileName
+          getFilePath:    ->
+            unless opts.filePath
               Q.fcall -> throw new Error("filename not defined")
             else
-              Q(opts.fileName)
+              Q(opts.filePath)
           getUserDir:     -> Q(opts.userDir or getUserHome())
 
-          # project dir is dependend on @fileName
+          # project dir is dependend on @filePath
 
           getSettings: (path) ->
             Q(xikij: extend({

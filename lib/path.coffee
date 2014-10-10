@@ -3,8 +3,6 @@
 stream = require "stream"
 
 splitPath = (path) ->
-  if not (typeof path is "string")
-    debugger
   tokens = path.split /(\\.|[()\[\]{}<>"'\/])/
   result = [""]
   closer = {"{": "}", "(": ")", "[": "]", "<": ">", '"': '"', "'": "'" }

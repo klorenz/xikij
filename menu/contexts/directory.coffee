@@ -63,6 +63,7 @@ module.exports = (xikij) ->
           if isabs
             menuPath
           else if p[0] in [".", ".."]
+
             @context.getCwd().then (cwd) =>
               console.log "getCwd gave", cwd, "p is", p.join("/")
               path.normalize path.resolve cwd, p.join("/")
@@ -123,3 +124,5 @@ module.exports = (xikij) ->
         return @readDir @self '_directoryCwd'
 
     getCwd: -> Q(@self '_directoryCwd')
+
+    getFilePath: -> Q(@self '_directoryFilePath')

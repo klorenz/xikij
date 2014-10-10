@@ -184,14 +184,28 @@ describe "Xikij", ->
       it "can handle menus in directory ./", ->
         doPromisedRequest {
           path: "./@pwd",
-          args: {fileName: __filename}
+          args: {filePath: __filename}
         }, (response) ->
           expect(response.data).toBe __dirname
+
+      it "can handle menus in directory ./ from tree", ->
+        doPromisedRequest {
+          body: "./\n  @pwd",
+          args: {filePath: __filename}
+        }, (response) ->
+          expect(response.data).toBe __dirname
+
+      it "can return the selected path", ->
+        doPromisedRequest {
+          body: "./#{path.basename(__filename)}\n  @path",
+          args: {filePath: __filename}
+        }, (response) ->
+          expect(response.data).toBe __filename
 
       it "can handle menus in directory ../", ->
         doPromisedRequest {
           path: "../@pwd",
-          args: {fileName: __filename}
+          args: {filePath: __filename}
         }, (response) ->
           expect(response.data).toBe path.resolve __dirname, ".."
 
@@ -199,7 +213,7 @@ describe "Xikij", ->
         {getUserHome} = require "../lib/util"
         doPromisedRequest {
           path: "~/@pwd",
-          args: {fileName: __filename, userDir: "/tmp" }
+          args: {filePath: __filename, userDir: "/tmp" }
         }, (response) ->
           expect(response.data).toBe "/tmp"
       #it "can browse files in context of ", ->

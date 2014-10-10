@@ -316,7 +316,7 @@ module.exports = (Interface, xikij) ->
 
     getCwd: ->
       deferred = Q.defer()
-      @getFileName()
+      @getFilePath()
         .then (filename) -> deferred.resolve path.dirname filename
         .fail (error)    -> deferred.resolve path.resolve "."
       deferred.promise

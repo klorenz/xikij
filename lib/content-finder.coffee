@@ -26,7 +26,7 @@ class LineFinder
     result.push line
 
   findLine: (line) ->
-    debugger
+    
 
     if @iPath >= @path.getLength()
       return @doContinue if !@needIndent and !@collecting

@@ -1,4 +1,5 @@
 path           = require "path"
+fs             = require 'fs'
 {EventEmitter} = require "events"
 Q              = require "q"
 {makeTree}     = require "./util"
@@ -16,6 +17,14 @@ class Package
 
   load: (xikij) ->
     xikij.moduleLoader.load this
+
+    watchEventHandler = (event, filename) =>
+      # event is 'rename' or 'change'
+      console.log "file event", event, filename
+      xikij.moduleLoader.load this, filename
+
+    # TODO: remove watcher on xikij close
+    @watcher = fs.watch @dir, watchEventHandler
 
   asObject: (attributes...)->
     obj = {}
@@ -132,6 +141,5 @@ class PackageManager extends EventEmitter
 
   getPackages: ->
     return @_packages
-
 
 module.exports = {Package, PackageManager}
