@@ -63,10 +63,10 @@ module.exports = (xikij) ->
           if isabs
             menuPath
           else if p[0] in [".", ".."]
-
             @context.getCwd().then (cwd) =>
               console.log "getCwd gave", cwd, "p is", p.join("/")
-              path.normalize path.resolve cwd, p.join("/")
+              path.resolve cwd, p.join("/")
+
           else if p[0].match /^~/
             @dirExpand(p.join("/"))
           else
@@ -91,7 +91,7 @@ module.exports = (xikij) ->
           else
             debug "is last"
             if menuPath.match /\/$/
-              @_yes(menuPath[...-1], true)
+              @_yes(cwd, true)
             else
               @isDirectory(cwd).then (isdir) =>
                 @_yes(cwd, isdir)
@@ -107,7 +107,7 @@ module.exports = (xikij) ->
       if isdir
         @_directoryCwd = filePath
       else
-        @_directoryCwd = @_direcotryDirName
+        @_directoryCwd = @_directoryDirName
       debug "yes:", filePath
       yes
 

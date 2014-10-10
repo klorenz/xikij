@@ -195,6 +195,8 @@ module.exports = (Interface, xikij) ->
     readDir: (dir) ->
       deferred = Q.defer()
 
+      console.log "readDir", dir
+
       fs.readdir dir, (err, entries) =>
         if err
           deferred.reject err
