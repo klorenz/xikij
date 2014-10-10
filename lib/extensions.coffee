@@ -66,7 +66,7 @@ class ModuleLoader
       for base in bases
         dir = path.join(pkg.dir, base)
         entry = path.relative dir, filename
-        unless relpath.match /^\.\./
+        unless entry.match /^\.\./
           return @loadModule pkg, dir, entry
 
       console.log "nothing to do for #{filename}"
