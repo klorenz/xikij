@@ -17,6 +17,8 @@ describe "Xikij", ->
     + ip
     + log
     + menu
+    + packages
+    + path
     + pwd\n
     """
 
@@ -85,6 +87,8 @@ describe "Xikij", ->
             "xikij/ip"
             "xikij/log"
             "xikij/menu"
+            "xikij/packages"
+            "xikij/path"
             "xikij/pwd"
           ]
 

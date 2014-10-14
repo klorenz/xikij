@@ -8,7 +8,9 @@ describe "Xikij Path", ->
     expect(path.toPath()).toBe "foo/bar"
   it "represents also a complex path", ->
     path = new Path ".package/[Module: xikij/foo/bar]/.moduleName"
-    expect(path.nodePath).toEqual ["x"]
+    expect((x.name for x in path.nodePath)).toEqual [
+      '.package',  '[Module: xikij/foo/bar]', '.moduleName'
+    ]
 
   describe "when select a part of xikij document", ->
     xikij = null

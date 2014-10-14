@@ -11,9 +11,15 @@ class Package
   constructor: (@dir, @name) ->
     unless @name
       @name = path.basename(@dir)
+      if @isUserPackage()
+        @name = "user-#{@name}"
 
     @modules = {}
+    @settings = {}
     @errors = null
+
+  isUserPackage: () ->
+    return "user_modules" in @dir
 
   load: (xikij) ->
     xikij.moduleLoader.load this
@@ -21,6 +27,7 @@ class Package
     watchEventHandler = (event, filename) =>
       # event is 'rename' or 'change'
       console.log "file event", event, filename
+
       xikij.moduleLoader.load this, filename
 
     # TODO: remove watcher on xikij close
@@ -53,9 +60,13 @@ class Package
 class PackageManager extends EventEmitter
   constructor: (@xikij) ->
     @_packages = []
+    @_user_packages = []
+
     @loading = []
     #@loaded =  # be a promise
     @_modules = null
+    @_settings = null
+    #@_user_modules = null
 
   loaded: ->
     Q.all(@loading).then (result) =>
@@ -81,6 +92,7 @@ class PackageManager extends EventEmitter
     #   @emit "loaded" unless packageLoaders
 
   all: -> @_packages
+  userPackages: -> (pkg for pkg in @_packages when pkg.isUserPackage())
 
   failed: ->
     result = []
@@ -117,6 +129,34 @@ class PackageManager extends EventEmitter
   #   if not @_modules? ->
   #     for
   #
+
+
+  getPackageSettings: (name, packageName=null) ->
+    if not @_settings?
+      @_settings = {}
+
+      for pkg in @_packages
+        continue if pkg.isUserPackage()
+
+        makeTree pkg.settings, @_settings, (key,value) ->
+          # if value.menuType
+          #   key = "#{key}.#{value.menuType}"
+          key.split("/")[1..]
+
+    unless name?
+      return @_settings
+
+
+
+  getUserSettings: (user, name) ->
+    # if not @_user_settings?
+    #   for pkg in @userPackages()
+    #     if pkg.name == user
+
+
+
+
+
 
   # get a module without respect of package (merged packages)
   getModule: (name) ->

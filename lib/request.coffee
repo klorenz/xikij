@@ -1,5 +1,5 @@
 Q               = require "q"
-{promised, getUserHome}      = require "./util"
+{promised, getUserHome, getUserName} = require "./util"
 {RejectPath}    = require "./context"
 {extend, clone} = require "underscore"
 
@@ -31,7 +31,7 @@ class Request
   getContext: (context, reqPath) ->
     unless reqPath
       context = Q(context)
-      
+
       @nodePaths.forEach (reqPath) =>
         console.log "reqPath"
         context = context.then (ctx) =>
@@ -132,7 +132,13 @@ class Request
               Q.fcall -> throw new Error("filename not defined")
             else
               Q(opts.filePath)
+
+          # this is home directory equivalent
           getUserDir:     -> Q(opts.userDir or getUserHome())
+
+          # this is system user package equivalent
+          getXikijUserDir: -> @getUserName().then (username) =>
+            path.join @getXikij().userPackagesDir, "user_modules", username
 
           # project dir is dependend on @filePath
 
@@ -142,6 +148,8 @@ class Request
                 xikijProjectDirName: ".xikij"
               },
               opts))
+
+          getUserName: -> Q(opts.username or getUserName())
 
         @getContext(new RequestContext(context)).then (context) =>
           @context = context

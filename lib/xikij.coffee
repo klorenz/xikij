@@ -122,6 +122,10 @@ class Xikij
         for dir in fs.readdirSync path.join @userPackagesDir, "node_modules"
           packagesPath.push path.resolve @userPackagesDir, dir
 
+        # for each user there is a subfolder in home
+        for dir in fs.readdirSync path.join @userPackagesDir, "user_modules"
+          packagesPath.push path.resolve @userPackagesDir, dir
+
     if typeof packagesPath is "string"
       packagesPath = [ packagesPath ]
 

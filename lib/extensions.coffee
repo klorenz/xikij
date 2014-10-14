@@ -6,7 +6,8 @@ util   = require "./util"
 vm     = require "vm"
 Q      = require "q"
 
-coffeescript = require "coffee-script"
+coffeescript   = require "coffee-script"
+settingsParser = require "./settings-parser"
 
 class BridgedModule
 
@@ -69,8 +70,15 @@ class ModuleLoader
         unless entry.match /^\.\./
           return @loadModule pkg, dir, entry
 
+      dir = path.join(pkg.dir, "settings")
+      entry = path.relative dir, filename
+      unless entry.match /^\.\./
+        return @loadSettings pkg, dir, entry
+
       console.log "nothing to do for #{filename}"
       return
+
+
 
     promises = []
 
@@ -139,6 +147,25 @@ class ModuleLoader
       error: error
     console.log error.stack.toString()
 
+
+  loadSettings: (pkg, dir, entry) ->
+    sourceFile = path.join dir, entry
+
+    name = entry.replace(/\..*$/, '') # strip extensions
+    moduleName = "#{pkg.name}/#{name}"
+
+    xikijData =
+      fileName:     sourceFile
+      moduleName:   moduleName
+      settingsName: name
+      package:      pkg
+
+    return @xikij.readFile(sourceFile).then (content) =>
+      xikijData.settings = settingsParser.parse(content)
+
+      pkg.settings[settingsName] = xikijData
+
+
   loadModule: (pkg, dir, entry) ->
     sourceFile = path.join dir, entry
 
@@ -154,7 +181,7 @@ class ModuleLoader
       name   = m[1]
       suffix = m[2]
 
-    name = entry.replace(/()\..*$/, '') # strip extensions
+    name = entry.replace(/\..*$/, '') # strip extensions
     moduleName = "#{pkg.name}/#{name}"
 
     console.log "load module #{moduleName}"

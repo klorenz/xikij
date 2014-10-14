@@ -1,19 +1,22 @@
-Q = require "q"
+Q          = require "q"
 {promised} = require "./util"
+path       = require "path"
 
 module.exports = (Interface, xikij) ->
   Interface.define class Env
-    shellExpand:    (args...) -> @dispatch "shellExpand", args
-    dirExpand:      (args...) -> @dispatch "dirExpand", args
-    getProjectDirs: (args...) -> @dispatch "getProjectDirs", args
-    getProjectDir:  (args...) -> @dispatch "getProjectDir", args
-    getUserDir:     (args...) -> @dispatch "getUserDir", args
-    getEnv:         (args...) -> @dispatch "getEnv", args
+    shellExpand:     (args...) -> @dispatch "shellExpand", args
+    dirExpand:       (args...) -> @dispatch "dirExpand", args
+    getProjectDirs:  (args...) -> @dispatch "getProjectDirs", args
+    getProjectDir:   (args...) -> @dispatch "getProjectDir", args
+    getUserDir:      (args...) -> @dispatch "getUserDir", args
+    getXikijUserDir: (args...) -> @dispatch "getXikijUserDir", args
+    getEnv:          (args...) -> @dispatch "getEnv", args
+    getXikij:        () -> xikij
     # return full pathname of file of interest
     #
     # this is usually the path of file opened in editor, but also
     # a {Directory} context provides the path of file referenced.
-    getFilePath:    (args...) -> @dispatch "getFilePath", args
+    getFilePath:     (args...) -> @dispatch "getFilePath", args
 
   Interface.default class Env extends Env
     shellExpand: (s) ->
@@ -60,6 +63,11 @@ module.exports = (Interface, xikij) ->
               deferred.reject(result)
 
       deferred.promise
+
+    # this is system user package equivalent
+    getXikijUserDir: -> @getUserName().then (username) =>
+      path.join xikij.userPackagesDir, "user_modules", username
+
 
     getProjectDir: (name) ->
       deferred = Q.defer()

@@ -6,6 +6,7 @@ path           = require "path"
 Q              = require "q"
 
 getUserHome = -> process.env.HOME || process.env.USERPROFILE
+getUserHome = -> process.env.USER || process.env.USERNAME
 
 #
 # Response
@@ -82,7 +83,8 @@ parseCommand = (s) ->
     else if m[0] == "'" and m[-1..] == "'"
       result.push m[1...-1].replace('\\\\', '\\').replace('\\"', '"')
     else
-      return null if /(^(?:[|<>]|&&|\|\||&)$|^[12]>|`|\$|^;|^~|;$)/.test m
+      #return null if /(^(?:[|<>]|&&|\|\||&)$|^[12]>|`|\$|^;|^~|(?:^|[^\\])\*|;$)/.test m
+      return null if /[^\w\-=]/.test m
       result.push m
 
   return result

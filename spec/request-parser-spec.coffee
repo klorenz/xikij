@@ -289,7 +289,7 @@ describe "Request Parser", ->
         ]
       }
 
-    fit "can parse multiple contexts in a tree", ->
+    it "can parse multiple contexts in a tree", ->
       body = """
         ./foo/bar
           @path

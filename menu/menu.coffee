@@ -24,26 +24,26 @@ module.exports = (xikij) ->
       result = null
 
     if request.input
-      return @getUserDir().then (userdir) =>
-        menuname = request.path.toPath()
+      return @getXikijUserDir().then (userdir) =>
+          menuname = request.path.toPath()
 
-        if result?.sourceFile
-          menupath = "#{userdir}/.xikij/#{result.menuName}.#{result.menuType}"
-        else if not result?
-          menupath = "#{userdir}/.xikij/#{menuname}"
+          if result?.sourceFile
+            menupath = "#{userdir}/menu/#{result.menuName}.#{result.menuType}"
+          else if not result?
+            menupath = "#{userdir}/menu/#{menuname}"
 
-          if not path.extname(menupath)
-            menupath += ".xikij"
-        else
-          throw new Error("#{menuname} is a directory")
+            if not path.extname(menupath)
+              menupath += ".xikij"
+          else
+            throw new Error("#{menuname} is a directory")
 
-        return @makeDirs(path.dirname menupath).then =>
-          # check input
-          @request(
-            path:    menupath
-            context: request.context
-            input:   request.input
-            )
+          return @makeDirs(path.dirname menupath).then =>
+            # check input
+            @request(
+              path:    menupath
+              context: request.context
+              input:   request.input
+              )
 
     else if result?.sourceFile
       return @openFile(result.sourceFile)
