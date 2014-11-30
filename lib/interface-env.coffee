@@ -1,5 +1,5 @@
 Q          = require "q"
-{promised} = require "./util"
+{promised, getUserName} = require "./util"
 path       = require "path"
 
 module.exports = (Interface, xikij) ->
@@ -12,6 +12,7 @@ module.exports = (Interface, xikij) ->
     getXikijUserDir: (args...) -> @dispatch "getXikijUserDir", args
     getEnv:          (args...) -> @dispatch "getEnv", args
     getXikij:        () -> xikij
+    getUserName:     (args...) -> @dispatch "getUserName", args
     # return full pathname of file of interest
     #
     # this is usually the path of file opened in editor, but also
@@ -68,6 +69,7 @@ module.exports = (Interface, xikij) ->
     getXikijUserDir: -> @getUserName().then (username) =>
       path.join xikij.userPackagesDir, "user_modules", username
 
+    getUserName: -> Q(getUserName())
 
     getProjectDir: (name) ->
       deferred = Q.defer()

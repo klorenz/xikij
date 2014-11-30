@@ -26,7 +26,12 @@ module.exports = (Interface, xikij) ->
       deferred.promise
 
     # respond gets a Response object, which contains a type and a stream
-    request: ({path, body, args, action, context, input}, _respond) ->
+    request: (opts, _respond) ->
+      debugger
+      if typeof opts is "string"
+        opts = path: opts
+
+      {path, body, args, action, context, input} = opts
 
       #xikij.initialized = xikij.initialize() unless xikij.initialized
 

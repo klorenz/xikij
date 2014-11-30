@@ -1,0 +1,4 @@
+terminal-command:
+    On Windows there is only configured one command.
+
+    "start cmd"

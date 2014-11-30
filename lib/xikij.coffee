@@ -13,6 +13,7 @@ _               = require "underscore"
 Q               = require "q"
 fs              = require "fs"
 {Context}       = require "./context"
+cli             = require "./xikij-cli"
 
 issubclass = (B, A) -> B.prototype instanceof A
 
@@ -50,6 +51,8 @@ class Xikij
     @dispatch = Context::dispatch
     @self     = Context::self
 
+    @event    = new EventEmitter()
+
     @Q = Q
 
     @_contexts = []
@@ -62,6 +65,8 @@ class Xikij
     @contentFinder = new ContentFinder this
     @util = util
     @Path = Path
+
+    @settings = {}
 
     # first initialize packages
     @packages   = new PackageManager this
@@ -98,12 +103,20 @@ class Xikij
     opts = opts or {}
     _.extend @opts, opts
 
+    console.log "opts: ", @opts
+
+
     userDir  = @opts.userDir  ? util.getUserHome()
     userBase = @opts.userBase ? ".xikij"
 
     @packages.add path.normalize path.join __dirname, ".."
 
-    @userPackagesDir = path.resolve userDir, userBase
+    if @opts.userPackagesDir
+      @userPackagesDir = @opts.userPackagesDir
+    else
+      @userPackagesDir = path.resolve userDir, userBase
+
+    console.log "userPackagesDir", @userPackagesDir
 
     #@userPackagesDir = path.resolve userDir, userBase
 
@@ -114,17 +127,27 @@ class Xikij
 
     else unless @opts.packagesPath?
       packagesPath = []
+
       if fs.existsSync @userPackagesDir
 
-        for dir in fs.readdirSync @userPackagesDir
-          packagesPath.push path.resolve @userPackagesDir, dir
+        node_modules_dir = path.join @userPackagesDir, "node_modules"
+        if fs.existsSync node_modules_dir
+          packagesPath.push node_modules_dir
 
-        for dir in fs.readdirSync path.join @userPackagesDir, "node_modules"
-          packagesPath.push path.resolve @userPackagesDir, dir
+        user_modules_dir = path.join @userPackagesDir, "user_modules"
+        if fs.existsSync user_modules_dir
+          packagesPath.push user_modules_dir
 
-        # for each user there is a subfolder in home
-        for dir in fs.readdirSync path.join @userPackagesDir, "user_modules"
-          packagesPath.push path.resolve @userPackagesDir, dir
+        # for dir in fs.readdirSync @userPackagesDir
+        #   continue if dir == "node_modules"
+        #   continue if dir == "user_modules"
+        #
+        #   p = path.resolve @userPackagesDir, dir
+        #   stat = fs.statSync p
+        #   if stat.isDirectory()
+        #     packagesPath.push p
+    else
+      packagesPath = @opts.packagesPath
 
     if typeof packagesPath is "string"
       packagesPath = [ packagesPath ]
@@ -132,10 +155,14 @@ class Xikij
     for p in packagesPath
       p = path.normalize(p)
 
-      fs.readdir p, (entries) =>
-        return unless entries?
-        for e in entries
-          @packages.add path.join(p, e)
+      console.log "loading packages from #{p}"
+
+      for e in fs.readdirSync p
+        _path = path.join(p, e)
+        stat = fs.statSync _path
+        if stat.isDirectory()
+          console.log "add", _path
+          @packages.add _path
 
     @packages.loaded()
       .then =>
@@ -158,11 +185,6 @@ class Xikij
 
   getSearchPath: (type) ->
     @packages.each (pkg) -> path.join pkg.path, type
-
-
-
-
-
 
 module.exports =
   # middleware?

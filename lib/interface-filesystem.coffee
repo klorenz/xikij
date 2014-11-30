@@ -1,3 +1,4 @@
+{makeDirs} = require "./util"
 path   = require 'path'
 os     = require 'os'
 uuid   = require 'uuid'
@@ -100,17 +101,7 @@ module.exports = (Interface, xikij) ->
     cacheFile: (name, content, options) ->
       @tempFile(path.join("cache", name), content, options)
 
-    makeDirs: (dir) -> Q.fcall ->
-      dirParts = dir.split("/")
-      created = false
-      for d,i in dirParts
-        continue if i is 0
-        d = dirParts[..i].join("/")
-        unless fs.existsSync(d)
-          fs.mkdirSync(d)
-          created = true
-
-      created
+    makeDirs: (dir) -> Q(makeDirs(dir))
 
     writeFile: (filename, content, options) ->
       dirname = path.dirname(filename)
@@ -184,11 +175,15 @@ module.exports = (Interface, xikij) ->
 
     isDirectory: (filename) ->
       deferred = Q.defer()
-      fs.stat filename, (err, stat) ->
-        if err
-          deferred.reject err
-        else
-          deferred.resolve stat.isDirectory()
+
+      if not fs.existsSync filename
+        deferred.resolve false
+      else
+        fs.stat filename, (err, stat) ->
+          if err
+            deferred.reject err
+          else
+            deferred.resolve stat.isDirectory()
 
       deferred.promise
 

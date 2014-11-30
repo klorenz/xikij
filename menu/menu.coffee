@@ -17,35 +17,20 @@ module.exports = (xikij) ->
   path           = require "path"
 
   @run = (request) ->
-    console.log "menu menu request", request
+    debugger
+
     try
-      result = request.path.selectFromObject xikij.packages.getModule()
+      module = request.path.selectFromObject xikij.packages.getModule()
     catch error
-      result = null
+      module = null
 
     if request.input
-      return @getXikijUserDir().then (userdir) =>
-          menuname = request.path.toPath()
+      menu = request.path.toPath()
 
-          if result?.sourceFile
-            menupath = "#{userdir}/menu/#{result.menuName}.#{result.menuType}"
-          else if not result?
-            menupath = "#{userdir}/menu/#{menuname}"
+      return @userPackageUpdateMenu({menu, content: request.input, module}).then =>
+        new xikij.Action message: "menu #{menu} updated", action: "message", code: 0
 
-            if not path.extname(menupath)
-              menupath += ".xikij"
-          else
-            throw new Error("#{menuname} is a directory")
-
-          return @makeDirs(path.dirname menupath).then =>
-            # check input
-            @request(
-              path:    menupath
-              context: request.context
-              input:   request.input
-              )
-
-    else if result?.sourceFile
+    else if module?.sourceFile
       return @openFile(result.sourceFile)
 
-    return result
+    return module

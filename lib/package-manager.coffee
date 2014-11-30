@@ -12,6 +12,7 @@ class Package
     unless @name
       @name = path.basename(@dir)
       if @isUserPackage()
+        @_username = @name
         @name = "user-#{@name}"
 
     @modules = {}
@@ -21,7 +22,10 @@ class Package
   isUserPackage: () ->
     return "user_modules" in @dir
 
+  getUserName: () -> @_username
+
   load: (xikij) ->
+    console.log "load", @dir
     xikij.moduleLoader.load this
 
     watchEventHandler = (event, filename) =>
@@ -30,7 +34,10 @@ class Package
 
       xikij.moduleLoader.load this, filename
 
+      # maybe send event, that module has been updated
+
     # TODO: remove watcher on xikij close
+    console.log "added watcher", @dir
     @watcher = fs.watch @dir, watchEventHandler
 
   asObject: (attributes...)->
@@ -64,9 +71,16 @@ class PackageManager extends EventEmitter
 
     @loading = []
     #@loaded =  # be a promise
-    @_modules = null
     @_settings = null
     #@_user_modules = null
+
+    @_modules = {}
+
+    @xikij.event.on "package:module-updated", (name, module) =>
+      debugger
+      data = {}
+      data[module.menuName] = module
+      makeTree data, @_modules
 
   loaded: ->
     Q.all(@loading).then (result) =>
@@ -92,7 +106,12 @@ class PackageManager extends EventEmitter
     #   @emit "loaded" unless packageLoaders
 
   all: -> @_packages
+
   userPackages: -> (pkg for pkg in @_packages when pkg.isUserPackage())
+
+  getUserPackage: (user) ->
+    for pkg in @userPackages()
+      return pkg if pkg.getUserName() == user
 
   failed: ->
     result = []
@@ -146,28 +165,23 @@ class PackageManager extends EventEmitter
     unless name?
       return @_settings
 
-
-
   getUserSettings: (user, name) ->
     # if not @_user_settings?
     #   for pkg in @userPackages()
     #     if pkg.name == user
 
 
-
-
-
-
   # get a module without respect of package (merged packages)
   getModule: (name) ->
+    debugger
 
-    if not @_modules?
-      @_modules = {}
-      for pkg in @_packages
-        makeTree pkg.modules, @_modules, (key,value) ->
-          # if value.menuType
-          #   key = "#{key}.#{value.menuType}"
-          key.split("/")[1..]
+    # if not @_modules?
+    #   @_modules = {}
+    #   for pkg in @_packages
+    #     makeTree pkg.modules, @_modules, (key,value) ->
+    #       # if value.menuType
+    #       #   key = "#{key}.#{value.menuType}"
+    #       key.split("/")[1..]
 
     unless name?
       return @_modules

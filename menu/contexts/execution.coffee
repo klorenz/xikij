@@ -17,18 +17,18 @@ module.exports = (xikij) ->
       return "" if /^\s*$/.test command
 
       cmd = parseCommand(command)
-      console.log "cmd", cmd
+      #console.log "cmd", cmd
 
       @getCwd()
         .then (cwd) =>
-          console.log "have cwd"
+          #console.log "have cwd"
           opts = {cwd: cwd}
 
           unless cmd
-            console.log "execute shell:", command
+            #console.log "execute shell:", command
             @executeShell command, opts
           else
-            console.log "execute:", cmd
+            #console.log "execute:", cmd
             @execute cmd.concat([opts])...
 
         .then (proc) =>

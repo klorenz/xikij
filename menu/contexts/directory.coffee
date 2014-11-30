@@ -29,7 +29,7 @@ module.exports = (xikij) ->
   Q = require "q"
   _ = require "underscore"
 
-  DEBUG = false
+  DEBUG = true
 
   debug = (args...) ->
     console.debug "CTX:Directory:", args... if DEBUG
@@ -49,6 +49,7 @@ module.exports = (xikij) ->
 
       @shellExpand reqPath.toPath()
         .then (rp) =>
+          debug "rp", rp
           menuPath = rp
 
           @_fileName = null
@@ -57,9 +58,11 @@ module.exports = (xikij) ->
           p[...2].join("/")
 
         .then (fsRoot) =>
+          debug "fsRoot", fsRoot
           @isAbs fsRoot
 
         .then (isabs) =>
+          debug "isabs", isabs
           if isabs
             menuPath
           else if p[0] in [".", ".."]
@@ -73,6 +76,7 @@ module.exports = (xikij) ->
             @reject("directory")
 
         .then (cwd) =>
+          debug "cwd", cwd
           @reject("directory") unless cwd
 
           unless _.last(request.nodePaths) is reqPath
@@ -115,8 +119,8 @@ module.exports = (xikij) ->
       unless @self '_directoryIsDir'
         filePath = @self '_directoryFilePath'
         if request.input
-          @writeFile(filePath, request.input)
-          return xikij.Action message: "saved", action: "message"
+          return @writeFile(filePath, request.input).then =>
+            new xikij.Action message: "saved", action: "message"
 
         return @openFile filePath
 

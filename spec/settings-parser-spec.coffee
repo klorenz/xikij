@@ -88,3 +88,27 @@ describe "Settings Parser", ->
           value2: true
           value3: "this is some {template}\nstring."
       }
+
+
+###
+Here is one more idea for creating templates for new settings.
+
+.
+connections:
+  .new:
+      ${1:Name of Connection}:
+
+        url     : "${1:http://fogbugz.com/}"
+
+        Enter username/password ...
+        username: "$2"
+        password: "$3"
+
+        ... or an authentication token
+        token   : "$4"
+
+  /(.*)/:
+      .new
+
+
+###

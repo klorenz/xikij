@@ -5,6 +5,7 @@ util   = require "./util"
 {extend}      = require "underscore"
 vm     = require "vm"
 Q      = require "q"
+{Settings} = require "./settings"
 
 coffeescript   = require "coffee-script"
 settingsParser = require "./settings-parser"
@@ -51,41 +52,45 @@ class ModuleLoader
   _loadMenu: (pkg, menuBase) ->
       dir = path.join pkg.dir, menuBase
 
+      console.log "load package from filename #{filename}"
+
       @xikij.exists(dir).then (exists) =>
         return unless exists
         return @xikij.walk dir, (entry) =>
           @loadModule pkg, dir, entry[dir.length+1..]
 
   # load either an entire package or a
-  load: (pkg, filename) ->
-    bases = [ "menu", "menu-"+process.platform ]
+  _load: (pkg, filename, prefix, loader) ->
+    bases = [ prefix, "#{prefix}-"+process.platform ]
 
     if util.isPosix()
-      bases.push "menu-posix"
+      bases.push "#{prefix}-posix"
 
     if filename
+      console.log "load package from filename #{filename}"
       for base in bases
         dir = path.join(pkg.dir, base)
         entry = path.relative dir, filename
         unless entry.match /^\.\./
-          return @loadModule pkg, dir, entry
-
-      dir = path.join(pkg.dir, "settings")
-      entry = path.relative dir, filename
-      unless entry.match /^\.\./
-        return @loadSettings pkg, dir, entry
+          return @[loader] pkg, dir, entry
 
       console.log "nothing to do for #{filename}"
-      return
-
-
+      return Q(null)
 
     promises = []
 
-    bases.forEach (menuBase) =>
-      promises.push @_loadMenu pkg, menuBase
+    bases.forEach (base) =>
+      promises.push @[loader] pkg, base
+
+    console.log "promises", promises
 
     return Q.all(promises)
+
+  # load either an entire package or a
+  load: (pkg, filename) ->
+    @_load(pkg, filename, "menu", "loadMenu").then =>
+      @_load(pkg, filename, "settings", "loadSettings").then =>
+        @xikij.event.emit "package:updated", pkg, filename
 
   # loadCoffeeScript: (code, xikijData) ->
   #   filename = xikijData.fileName
@@ -147,29 +152,58 @@ class ModuleLoader
       error: error
     console.log error.stack.toString()
 
-
   loadSettings: (pkg, dir, entry) ->
+    console.log ">> load settings", pkg, dir, entry
+
+    unless entry?
+      dir = path.join pkg.dir, dir
+
+      return @xikij.exists(dir).then (exists) =>
+        return unless exists
+        return @xikij.walk dir, (entry) =>
+          @loadSettings pkg, dir, entry[dir.length+1..]
+
     sourceFile = path.join dir, entry
 
+    console.log "load settings #{sourceFile}"
+
     name = entry.replace(/\..*$/, '') # strip extensions
-    moduleName = "#{pkg.name}/#{name}"
+    settingsName = "#{pkg.name}/#{name}"
+
+    platform = null
+    if util.endsWith("posix")
+      platform = posix
+    else if util.endsWith process.platform
+      platform = process.platform
 
     xikijData =
       fileName:     sourceFile
       moduleName:   moduleName
       settingsName: name
       package:      pkg
+      platform:     platform
 
     return @xikij.readFile(sourceFile).then (content) =>
       xikijData.settings = settingsParser.parse(content)
 
-      pkg.settings[settingsName] = xikijData
+      if not (name of @xikij.settings)
+        @xikij.settings[name] = new Settings()
+
+      @xikij.settings[name].update(xikijData)
 
 
-  loadModule: (pkg, dir, entry) ->
+  loadMenu: (pkg, dir, entry) ->
+    unless entry?
+      dir = path.join pkg.dir, dir
+
+      return @xikij.exists(dir).then (exists) =>
+        return unless exists
+        return @xikij.walk dir, (entry) =>
+          @loadMenu pkg, dir, entry[dir.length+1..]
+
     sourceFile = path.join dir, entry
 
-    #name = path.basename sourceFile
+    console.log "load menu #{sourceFile}"
 
     moduleName = ""
 
@@ -228,6 +262,8 @@ class ModuleLoader
               if util.isSubClass(v, @xikij.Context)
                 @xikij.addContext k, v
 
+            @xikij.event.emit "package:module-updated", moduleName, xikijData
+
           catch error
             @handleError pkg, moduleName, error
 
@@ -267,6 +303,7 @@ class ModuleLoader
                     if util.isSubClass(v, @xikij.Context)
                       @xikij.addContext(k,v)
 
+                  @xikij.event.emit "package:module-updated", moduleName, xikijData
                 .fail (error) =>
                   @handleError pkg, moduleName, error
             else

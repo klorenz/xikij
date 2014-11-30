@@ -1,0 +1,8 @@
+terminal-command:
+  This list is for most systems.  First existing terminal from this
+  list will be run.
+
+  - "/usr/bin/gnome-terminal"
+  - "/usr/bin/Eterm"
+  - "/usr/bin/konsole"
+  - "/usr/bin/xterm"

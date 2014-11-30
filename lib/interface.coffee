@@ -1,11 +1,42 @@
 fs = require 'fs'
 
+# Provide an interface to xikij
+#
+# You can extend the interface from your menu module like this:
+#
+# ```coffee
+#   # you can extend interface with
+#   module.exports = (xikij) ->
+#     xikij.Interface.register __filename, (Interface, xikij) =>
+#       Interface.extend class MyClass
+#          mymethod: (foo, bar) ->
+#            console.log "this is the default", foo, bar
+# ```
+#
+# This is equivalent to following form, which defines explicitly
+# methods, which shall be mixed into dispatching class and into
+# class containing default behaviours:
+#
+#   module.exports = (xikij) ->
+#     xikij.Interface.register __filename, (Interface, xikij) =>
+#       Interface.define class MyClass
+#          mymethod: (args...) -> @dispatch "mymethod", args
+#
+#       Interface.default class MyClass extends MyClass
+#          mymethod: (foo, bar) ->
+#            console.log "this is the default", foo, bar
+# ```
+#
+#
 class Interface
   constructor: (@_xikij) ->
     @_registry = {}
     @_defaults = {}
     @_files    = {}
     @_docs     = {}
+
+    @_targetDefaults = null
+    @_targetDefines  = null
 
   # returns an object containing interface documentation
   getDoc: (name) ->
@@ -55,6 +86,10 @@ class Interface
         mode = "default"
         continue
 
+      if line.match /^\s*Interface.extend/
+        mode = "define"
+        continue
+
       if mode in ["define", "default"]
         console.log "line", line
 
@@ -89,6 +124,9 @@ class Interface
 
     docs.methods = meths = {}
     for k,v of methods
+      if m = k.match /(.*)\$dispatcher$/
+        k = m[1]
+
       key = "#{k}(#{v.args})"
 
       description = ""
@@ -109,22 +147,33 @@ class Interface
     @_docs[name] = docs
     return docs
 
-
   define: (cls) ->
     name = cls.name
     @[name] = @_registry[name] = cls
     @_files[name] = @currentFile
 
+    if @_targetDefines?
+      o = {}
+      o[name] = cls
+      @mixin @_targetDefines, o
+
   default: (cls) ->
     @_defaults[cls.name] = cls
 
+    if @_targetDefaults?
+      o = {}
+      o[cls.name] = cls
+      @mixin @_targetDefaults, o
+
   mixDefaultsInto: (target, classes...) ->
+    @_targetDefaults = target unless @_targetDefaults?
     @mixin target, @_defaults, classes...
 
   implements: (target, classes...) ->
     @mixin target, @_registry, classes...
 
   mixInto: (target, classes...) ->
+    @_targetDefines = target unless @_targetDefines?
     @mixin target, @_registry, classes...
 
   mixin: (target, source, classes...) ->
@@ -137,7 +186,10 @@ class Interface
         continue if name is "constructor"
 
         if typeof target is "function"
-          continue if name of target::
+          if name of target::
+            console.log "WARNING: #{name} already defined in interface"
+            continue
+
           target::[name] = method
         else
           continue if target[name]
@@ -145,9 +197,38 @@ class Interface
 
     target
 
+  # this does, what
+  extend: (filename, cls) ->
+    name = cls.name
+    @[name] = @_registry[name] = cls
+    @_files[name] = @currentFile
+
+    dispatcher = (name) ->
+      (args...) -> @dispatch name, args
+
+    setprototype = (cls, name, method) ->
+      throw new Error "ERROR: #{name} already defined in interface (#{cls.constructor.name})"
+      cls::[name] = method
+
+    for className, mixin of source
+      for name, method of mixin::
+        continue if name is "constructor"
+
+        if m = name.match /(.*)\$dispatcher$/
+          setprototype @_targetDefines, m[1], method
+
+        else
+          setprototype @_targetDefaults, name, method
+
+          if not (name of @_targetDefines::)
+            @_targetDefines::[name] = dispatcher name
+
+  register: (filename, registrar) ->
+    @currentFile = filename
+    registrar(this, @_xikij)
+
   load: (module) ->
-    @currentFile = require.resolve(module)
-    (require module)(this, @_xikij)
+    @register require.resolve(module), require(module)
     this
 
   # @clear: ->

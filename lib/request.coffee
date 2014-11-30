@@ -2,6 +2,7 @@ Q               = require "q"
 {promised, getUserHome, getUserName} = require "./util"
 {RejectPath}    = require "./context"
 {extend, clone} = require "underscore"
+path = require 'path'
 
 DEBUG = true
 # debug = (args...) ->

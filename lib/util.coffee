@@ -1,12 +1,14 @@
 INDENT = /^[ \t]*/
 
-stream         = require 'stream'
-{EventEmitter} = require 'events'
-path           = require "path"
-Q              = require "q"
+stream              = require 'stream'
+{EventEmitter}      = require 'events'
+path                = require "path"
+Q                   = require "q"
+{isObject, isArray} = require "underscore"
+fs                  = require 'fs'
 
 getUserHome = -> process.env.HOME || process.env.USERPROFILE
-getUserHome = -> process.env.USER || process.env.USERNAME
+getUserName = -> process.env.USER || process.env.USERNAME
 
 #
 # Response
@@ -254,10 +256,10 @@ insertToTree = (path, obj, tree) ->
     throw new Error("path empty")
 
   key = path[0]
-  if not (key of @)
-    if path.length == 1
-      return tree[key] = obj
-    else
+
+  if path.length == 1
+    return tree[key] = obj
+  else if not (key of tree)
       tree[key] = {}
 
   insertToTree.call tree[key], path[1..], obj
@@ -297,9 +299,55 @@ makeTree = (paths, tree=null, makeArray=null) ->
 
 isPosix = -> not (process.platform is "win32") # but with msys/cygwin!!
 
+# mixin attributes of source's prototype into target
+#
+# if target is a class (function) attributes are mixed into target's prototype
+# else into target itself.
+#
+mixin = (target, source) ->
+  for name, method of source::
+    continue if name is "constructor"
+
+    if typeof target is "function"
+      continue if name of target::
+      target::[name] = method
+    else
+      continue if target[name]
+      target[name] = method
+
+  target
+
+cloneDeep = (source) ->
+  if isArray(source)
+    result = []
+    for e in source
+      result.push cloneDeep(e)
+  else if isObject(source)
+    result = {}
+    for k,v of source
+      result[k] = cloneDeep(v)
+    # clone also prototypes?
+  else
+    result = source
+
+  result
+
+makeDirs = (dir) ->
+  dirParts = dir.split("/")
+  created = false
+  for d,i in dirParts
+    continue if i is 0
+    d = dirParts[..i].join("/")
+    unless fs.existsSync(d)
+      fs.mkdirSync(d)
+      created = true
+
+  created
+
+
 module.exports = {consumeStream, isSubClass, getIndent, removeIndent,
   endsWith, startsWith, makeResponse, getOutput, cookCoffee, StringReader,
   indented, Indenter, strip, parseCommand, makeCommand, makeCommandString,
   splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree, makeTree,
-  isPosix
+  isPosix, mixin, cloneDeep, getUserName, makeDirs
 }

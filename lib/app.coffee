@@ -3,8 +3,7 @@ logger     = require 'morgan'
 bodyParser = require 'body-parser'
 #routes = require 'routes/index'
 
-xiki = require 'xiki'
-
+xikij = require './xikij-express'
 
 app = express();
 
@@ -14,7 +13,7 @@ app.use bodyParser.urlencoded()
 app.use bodyParser.text()
 
 router = express.Router()
-router.get "*", xiki
+#router.get "*", xikij
 app.use '/', router
 
 app.set "view engine", "jade"
