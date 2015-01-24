@@ -20,7 +20,7 @@ module.exports = (xikij) ->
     debugger
 
     try
-      module = request.path.selectFromObject xikij.packages.getModule()
+      module = request.path.selectFromObject xikij.packages.getModuleWithSuffix()
     catch error
       module = null
 
@@ -31,6 +31,6 @@ module.exports = (xikij) ->
         new xikij.Action message: "menu #{menu} updated", action: "message", code: 0
 
     else if module?.sourceFile
-      return @openFile(result.sourceFile)
+      return @openFile(module.sourceFile)
 
     return module

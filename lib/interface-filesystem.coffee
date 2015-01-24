@@ -1,4 +1,4 @@
-{makeDirs} = require "./util"
+{makeDirs, isFileExecutable} = require "./util"
 path   = require 'path'
 os     = require 'os'
 uuid   = require 'uuid'
@@ -19,6 +19,7 @@ module.exports = (Interface, xikij) ->
     DoesExist: DoesExist
 
     isDirectory: (args...) -> @dispatch "isDirectory", args
+    isExecutable: (args...) -> @dispatch "isExecutable", args
     readDir:     (args...) -> @dispatch "readDir", args
     exists:      (args...) -> @dispatch "exists", args
     doesExist:   (args...) -> @dispatch "doesExist", args
@@ -184,6 +185,20 @@ module.exports = (Interface, xikij) ->
             deferred.reject err
           else
             deferred.resolve stat.isDirectory()
+
+      deferred.promise
+
+    isExecutable: (filename) ->
+      deferred = Q.defer()
+
+      if not fs.existsSync filename
+        deferred.resolve false
+      else
+        isFileExecutable filename, (err, isexec) ->
+          if err
+            deferred.reject err
+          else
+            deferred.resolve isexec
 
       deferred.promise
 

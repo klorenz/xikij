@@ -29,6 +29,7 @@ describe "xikijbridge.py", ->
       lines = result.replace(/\s*$/, '').split("\n")
       r1 = JSON.parse(lines[0])
       r2 = JSON.parse(lines[1])
+      expect(r1.stack).toBeFalsy()
       expect(r1.ret).toBe true
       expect(r2.ret).toBe "exited"
       closed = true

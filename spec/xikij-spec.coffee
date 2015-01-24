@@ -19,7 +19,8 @@ describe "Xikij", ->
     + menu
     + packages
     + path
-    + pwd\n
+    + pwd
+    + terminal\n
     """
 
   it "should load packages", ->
@@ -58,6 +59,18 @@ describe "Xikij", ->
   #
   describe "when xiki object has been created", ->
 
+    it "should provide modules", ->
+      xikij = new Xikij packagesPath: false
+      xikij.initialize()
+
+      waitsForPromise ->
+        xikij.packages.loaded()
+
+      runs ->
+        hostname = xikij.packages.getModule("hostname")
+        expect(hostname.moduleName).toBe("xikij/hostname")
+        expect(hostname.run).toBeTruthy()
+
     it "should have loaded basic package", ->
       xiki = new Xikij packagesPath: false
 
@@ -90,6 +103,7 @@ describe "Xikij", ->
             "xikij/packages"
             "xikij/path"
             "xikij/pwd"
+            "xikij/terminal"
           ]
 
         expect( (n for [n,c] in xiki.contexts(named: true)) ).toEqual [
@@ -183,7 +197,22 @@ describe "Xikij", ->
       it "can manage menu", ->
         doPromisedRequest {body: "menu"}, (response) ->
           expect(response.type).toBe "string"
-          expect(response.data).toBe MENU
+          expect(response.data).toBe """
+              + amazon.coffee
+              + bookmarklet.coffee
+              + contexts
+              + docs
+              + echo.coffee
+              + hostname.coffee
+              + inspect.coffee
+              + ip.coffee
+              + log.coffee
+              + menu.coffee
+              + packages.coffee
+              + path.coffee
+              + pwd.coffee
+              + terminal.coffee\n
+          """
 
       it "can handle menus in directory ./", ->
         doPromisedRequest {

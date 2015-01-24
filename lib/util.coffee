@@ -344,10 +344,29 @@ makeDirs = (dir) ->
 
   created
 
+# http://stackoverflow.com/questions/11775884/nodejs-file-permissions
+checkPermissions = (file, mask, cb) ->
+  fs.stat file, (error, stats) ->
+    if error
+      cb error, false
+    else
+      cb null, !!(mask && parseInt((stats.mode & parseInt("777", 8)).toString(8)[0]))
+
+isFileExecutable = (path, cb) ->
+  checkPermissions(path, 1, cb)
+
+ifFileReadable = (path, cb) ->
+  checkPermissions(path, 4, cb)
+
+isFileWriteable = (path, cb) ->
+  checkPermissions(path, 2, cb)
+
+
 
 module.exports = {consumeStream, isSubClass, getIndent, removeIndent,
   endsWith, startsWith, makeResponse, getOutput, cookCoffee, StringReader,
   indented, Indenter, strip, parseCommand, makeCommand, makeCommandString,
   splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree, makeTree,
-  isPosix, mixin, cloneDeep, getUserName, makeDirs
+  isPosix, mixin, cloneDeep, getUserName, makeDirs, isFileExecutable,
+  isFileReadable, isFileWriteable
 }

@@ -74,12 +74,18 @@ class PackageManager extends EventEmitter
     @_settings = null
     #@_user_modules = null
 
+    @_modules_suff = {}
     @_modules = {}
 
     @xikij.event.on "package:module-updated", (name, module) =>
-      debugger
+      console.debug "package:module-updated", name, module
+
       data = {}
-      data[module.menuName] = module
+      data["#{module.menuName}.#{module.menuType}"] = module
+      makeTree data, @_modules_suff
+
+      data = {}
+      data["#{module.menuName}"] = module
       makeTree data, @_modules
 
   loaded: ->
@@ -182,11 +188,33 @@ class PackageManager extends EventEmitter
     #       # if value.menuType
     #       #   key = "#{key}.#{value.menuType}"
     #       key.split("/")[1..]
+    mods = @_modules
+    unless name?
+      return mods
+
+    (new Path(name)).selectFromTree mods, found: (object, path, i) ->
+      # if is module
+      if "moduleName" of object
+        return object
+      else
+        false
+
+  # get a module without respect of package (merged packages)
+  getModuleWithSuffix: (name) ->
+
+    # if not @_modules?
+    #   @_modules = {}
+    #   for pkg in @_packages
+    #     makeTree pkg.modules, @_modules, (key,value) ->
+    #       # if value.menuType
+    #       #   key = "#{key}.#{value.menuType}"
+    #       key.split("/")[1..]
+    mods = @_modules_suff
 
     unless name?
-      return @_modules
+      return mods
 
-    Path(name).selectFromTree @_modules, found: (object, path, i) ->
+    (new Path(name)).selectFromTree mods, found: (object, path, i) ->
       # if is module
       if "moduleName" of object
         return object

@@ -1,3 +1,42 @@
+"""
+
++ /home/kiwi/github/xikij
++ ~/
++ ./
++ /
++ ?
++ amazon
++ bookmarklet
++ contexts
++ docs
++ echo
++ hostname
++ inspect
++ ip
++ log
+- menu
+  + amazon.coffee
+  + bookmarklet.coffee
+  + contexts
+  + docs
+  + echo.coffee
+  + hostname.coffee
+  + inspect.coffee
+  + ip.coffee
+  + log.coffee
+  + menu.coffee
+  + packages.coffee
+  + path.coffee
+  + pwd.coffee
+  + terminal.coffee
+  + fogbugz.coffee
++ packages
++ path
++ pwd
++ terminal
++ fogbugz
+
+"""
 module.exports = (xikij) ->
   @doc = """
     Handle Menus.  Menus are simple extensions to xiki-Ray.
@@ -51,7 +90,7 @@ module.exports = (xikij) ->
     does: (request, reqPath) ->
       return no if reqPath.rooted()
 
-      #@menuName = reqPath.toPath().replace(/\/$/, '').replace(/[:*?]\//, '/').replace(/:$/, '')
+      console.debug "menu does?", reqPath
 
       @weight = null
 
@@ -61,12 +100,17 @@ module.exports = (xikij) ->
               .replace(/:$/, '')
               )
 
+      console.debug "menu path", path
+
       try
         path.selectFromTree(
           xikij.packages.getModule(),
           found: (o, p, i) =>
 
             console.debug "found", o, p, i
+
+            debugger
+
             if o.moduleName?
               @weight   = reqPath[..i].toPath().length
               @menuName = o.menuName
@@ -94,7 +138,8 @@ module.exports = (xikij) ->
 
 
       for m in xikij.packages.modules()
-        #console.log "mod", m
+        console.log "mod", m
+
         mn = m.menuName
 
         minlen = Math.min(mn.length, rp.length)
@@ -162,10 +207,14 @@ module.exports = (xikij) ->
             return @module.doc
 
     expanded: (request) ->
+      debugger
       @
       path     = @self "menuPath"
       menuItem = @self "menuItem"
       menuName = menuItem.menuName
+
+      console.debug "menu expanded menuItem", menuItem
+      console.debug "menu expanded path", path
 
       if not path.empty()
 
@@ -192,6 +241,7 @@ module.exports = (xikij) ->
 
     getSubject: (req) ->
       menuItem = @self "menuItem"
+      console.debug "getSubject", menuItem
       if menuItem.menuName
         if menuItem.init
           Q(menuItem.init()).then (value) => value ? menuItem

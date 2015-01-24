@@ -13,7 +13,6 @@ describe "Menu", ->
         xikij.request("py-hostname").then (hostname) =>
           expect(hostname).toEqual os.hostname()
 
-
   describe "menu manager", ->
     tempdir = null
     result = null

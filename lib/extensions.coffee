@@ -242,6 +242,7 @@ class ModuleLoader
               delete require.cache[resolved]
 
             refined = factory = require sourceFile
+
             if factory instanceof Function
               refined = factory.call xikijData, @xikij
 
@@ -262,7 +263,7 @@ class ModuleLoader
               if util.isSubClass(v, @xikij.Context)
                 @xikij.addContext k, v
 
-            @xikij.event.emit "package:module-updated", moduleName, xikijData
+            @xikij.event.emit "package:module-updated", moduleName, refined
 
           catch error
             @handleError pkg, moduleName, error
@@ -308,6 +309,18 @@ class ModuleLoader
                   @handleError pkg, moduleName, error
             else
               throw new Error "not implemented"
+
+      # else
+      #   @xikij.isExecutable(sourceFile).then (isexecutable) =>
+      #     if isexecutable
+      #       xikij = @xikij
+      #
+      #       xikijData.doc = ->
+      #         @executeShell sourceFile, "--help"
+      #
+      #       xikijData.run = (request) ->
+      #         @executeShell sourceFile, request.path
+
 
       # if isexecutable
       # foo.sh => whatever there comes, if is json compilable or cson compilable
