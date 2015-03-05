@@ -4,11 +4,26 @@ executableLoader      = require "../lib/extensions/executable"
 {RequestContextClass} = require "../lib/request-context"
 {Xikij}               = require "../lib/xikij"
 {getOutput}           = require "../lib/util"
+os = require "os"
 
-describe "extensions", ->
+fdescribe "extensions", ->
+
   describe "coffeescript", ->
     it "can load coffeescript extensions", ->
-      expect(true).toBe(true)
+      subject =
+        sourceFile: "#{__dirname}/fixture/packages/xikij-executable/menu/hostname.coffee"
+
+      xikij = new Xikij packagesPath: false, initialization: false
+      context = {xikij}
+
+      promise = coffeeLoader.call(context, subject)
+
+      result = null
+
+      waitsForPromise ->
+        promise.then (subject) ->
+          expect(subject.run()).toEqual os.hostname()
+
 
   describe "executable", ->
     it "can load simple executables as extension", ->

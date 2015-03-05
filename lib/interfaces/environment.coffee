@@ -1,5 +1,5 @@
 Q          = require "q"
-{promised, getUserName} = require "./util"
+{promised, getUserName} = require "../util"
 path       = require "path"
 
 module.exports = (Interface, xikij) ->

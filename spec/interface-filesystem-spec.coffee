@@ -3,7 +3,7 @@ path = require "path"
 describe "Interface Filesystem", ->
   describe "Default Filesystem Implementation", ->
     Interface = new (require "../lib/interface")()
-    Interface.load('../lib/interface-filesystem')
+    Interface.load('../lib/interfaces/filesystem')
     fs = Interface.mixDefaultsInto {}, 'FileSystem'
     fixture = path.resolve(__dirname, "fixture/interface-filesystem")
 

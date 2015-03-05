@@ -2,7 +2,7 @@ child_process = require 'child_process'
 os            = require 'os'
 Q             = require "q"
 {last}        = require "underscore"
-{makeCommand} = require "./util"
+{makeCommand} = require "../util"
 path          = require "path"
 fs            = require "fs"
 

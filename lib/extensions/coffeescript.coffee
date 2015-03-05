@@ -1,6 +1,7 @@
-require "../util"
+Q = require "q"
+{extend} = require "underscore"
 
-moduleExports = (subject) ->
+module.exports = (subject) ->
   console.log "coffeescript loader", subject
   return Q(false) if subject.menuType != "coffee"
 

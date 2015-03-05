@@ -5,8 +5,8 @@
 Q          = require "q"
 {keys}     = require "underscore"
 {Readable} = require "stream"
-{Action}   = require "./action"
-{Response} = require "./response"
+{Action}   = require "../action"
+{Response} = require "../response"
 
 module.exports = (Interface) ->
   Interface.define class Actions
@@ -81,5 +81,5 @@ module.exports = (Interface) ->
     getUserInput: (opts) ->
       name     = opts.name
       _default = opts.default or ""
-      
+
       Q xikij.Action action: "userInput", name: name, default: _default

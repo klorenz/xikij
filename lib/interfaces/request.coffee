@@ -1,5 +1,5 @@
 Q = require "q"
-{Response} = require "./response"
+{Response} = require "../response"
 
 
 module.exports = (Interface, xikij) ->
@@ -44,7 +44,7 @@ module.exports = (Interface, xikij) ->
 
       xikij.initialized
         .then =>
-          {parseXikiRequest} = require "./request-parser"
+          {parseXikiRequest} = require "../request-parser"
 
           request = parseXikiRequest {path, body, args, input, action}
 

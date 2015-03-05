@@ -1,4 +1,4 @@
-{makeDirs, isFileExecutable} = require "./util"
+{makeDirs, isFileExecutable} = require "../util"
 path   = require 'path'
 os     = require 'os'
 uuid   = require 'uuid'
