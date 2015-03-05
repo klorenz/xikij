@@ -33,7 +33,6 @@ class Xikij
       xikijProjectDirName: '.xikij'
     }
 
-
   constructor: (opts) ->
     opts = opts or {}
 
@@ -76,9 +75,13 @@ class Xikij
     @opts = opts
 
     @_initStarted   = false
-    @initialization = Q.defer()
-    @initialized    = @initialization.promise
-    @initialize()
+
+    if not opts.initialization
+      @initialized = Q(true)
+    else
+      @initialization = Q.defer()
+      @initialized    = @initialization.promise
+      @initialize()
 
     # initialized method has been triggered
 #    @_initialized = false

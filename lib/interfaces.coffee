@@ -20,12 +20,12 @@
 #
 module.exports = (Interface) ->
   Interface
-    .load("./interface-program-execution")
-    .load("./interface-namespace")
-    .load("./interface-filesystem")
-    .load("./interface-actions")
-    .load("./interface-request")
-    .load("./interface-env")
-    .load("./interface-contexts")
-    .load("./interface-logger")
-    .load("./interface-packages")
+    .load("./interfaces/subprocess")
+    .load("./interfaces/namespace")
+    .load("./interfaces/filesystem")
+    .load("./interfaces/actions")
+    .load("./interfaces/request")
+    .load("./interfaces/environment")
+    .load("./interfaces/contexts")
+    .load("./interfaces/logger")
+    .load("./interfaces/packages")

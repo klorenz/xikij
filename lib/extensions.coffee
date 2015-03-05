@@ -10,6 +10,10 @@ Q      = require "q"
 coffeescript   = require "coffee-script"
 settingsParser = require "./settings-parser"
 
+pythonLoader     = require "./extensions/python"
+coffeeLoader     = require "./extensions/coffeescript"
+executableLoader = require "./extensions/executable"
+
 class BridgedModule
 
   constructor: (@bridge, @spec) ->
@@ -17,12 +21,17 @@ class BridgedModule
       @[entry] = (args...) =>
         @bridge.request "moduleRun", @spec.moduleName, args
 
+class XikijModule
+  constructor: ({@fileName, @moduleName, @settingsName, @package, @platform}) ->
+
 
 class ModuleLoader
 
   constructor: (@xikij) ->
     dstdir = null
     moddir = path.resolve __dirname, "..", "node_modules"
+
+    @loaders = {}
 
     x = @xikij
     # @cachedir = x.cacheDir("modules/node_modules", false)
@@ -49,6 +58,33 @@ class ModuleLoader
     #     if error
     #       throw error unless error is x.DoesNotExist or error is x.DoesExist
 
+    @registerLoader "coffeescript",
+    @registerLoader "python",
+    isExecutable = (subject, loader) ->
+      isFileExecutable sourceFile, (err, is_executable) =>
+        if is_executable
+          loader(subject)
+
+    @registerLoader "executable", executableLoader
+
+  # Public: registers extension loader
+  #
+  # * `name`     The {String} name of the loader
+  # * `loader`   The {function} doing the loading.
+  #
+  # `loader` must be a function, which returns a promis on either a XikijModule
+  # or a false value.
+  registerLoader: (name, loader) ->
+    if typeof subject is "string"
+      suffix = subject
+      subject = (spec) -> return spec.menuType == suffix
+
+    @loaders[name] = {subject, loader}
+
+  # Extended: unregister an extension loader
+  unregisterLoader: (name) ->
+    delete @loaders[name]
+
   _loadMenu: (pkg, menuBase) ->
       dir = path.join pkg.dir, menuBase
 
@@ -67,7 +103,7 @@ class ModuleLoader
       bases.push "#{prefix}-posix"
 
     if filename
-      console.log "load package from filename #{filename}"
+      console.log "load package from filename #{filename}:", bases
       for base in bases
         dir = path.join(pkg.dir, base)
         entry = path.relative dir, filename
@@ -176,12 +212,13 @@ class ModuleLoader
     else if util.endsWith process.platform
       platform = process.platform
 
-    xikijData =
+    xikijData = new XikijModule {
       fileName:     sourceFile
       moduleName:   moduleName
       settingsName: name
       package:      pkg
       platform:     platform
+    }
 
     return @xikij.readFile(sourceFile).then (content) =>
       xikijData.settings = settingsParser.parse(content)
@@ -218,7 +255,7 @@ class ModuleLoader
     name = entry.replace(/\..*$/, '') # strip extensions
     moduleName = "#{pkg.name}/#{name}"
 
-    console.log "load module #{moduleName}"
+    console.log "load module #{moduleName} (#{suffix})"
 
     xikijData =
       sourceFile: sourceFile
@@ -232,6 +269,19 @@ class ModuleLoader
     # if not moduleDir of pkg.modules
     #   pkg.modules[moduleDir] = pkg
 
+    for name, load of @loaders
+      load.call(this, xikijData)
+        .then((subject) =>
+          if subject
+            @xikij.event.emit "package:module-updated", moduleName, subject
+        )
+        .fail((error) =>
+          @handleError pkg, moduleName, error
+        )
+
+    return
+
+    debugger
     switch suffix
 
       when "coffee"
@@ -310,8 +360,23 @@ class ModuleLoader
             else
               throw new Error "not implemented"
 
-      # else
-      #   @xikij.isExecutable(sourceFile).then (isexecutable) =>
+      else
+
+        console.log "sourceFile", sourceFile
+        debugger
+        isFileExecutable sourceFile, (err, is_executable) =>
+          console.log "isFileExecutable", sourceFile, is_executable
+          if is_executable
+            xikij = @xikij
+
+            xikijData.doc = ->
+              @executeShell sourceFile, "--help"
+
+            xikijData.run = (request) ->
+              @executeShell sourceFile, request.path
+
+            @xikij.event.emit "package:module-updated", moduleName, xikijData
+
       #     if isexecutable
       #       xikij = @xikij
       #

@@ -355,7 +355,7 @@ checkPermissions = (file, mask, cb) ->
 isFileExecutable = (path, cb) ->
   checkPermissions(path, 1, cb)
 
-ifFileReadable = (path, cb) ->
+isFileReadable = (path, cb) ->
   checkPermissions(path, 4, cb)
 
 isFileWriteable = (path, cb) ->

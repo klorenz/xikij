@@ -4,6 +4,7 @@ Q             = require "q"
 {last}        = require "underscore"
 {makeCommand} = require "./util"
 path          = require "path"
+fs            = require "fs"
 
 module.exports = (Interface) ->
   # Originally only intended to execute programs.  But looking at implementation of
@@ -35,9 +36,14 @@ module.exports = (Interface) ->
       promises = []
       unless 'cwd' of opts
         promise = @getCwd()
-          .then (cwd) ->
-            opts.cwd = cwd
-            console.log "exec getCwd settled"
+          .then (cwd) =>
+            @isDirectory(cwd).then (isdir) ->
+              if isdir
+                console.log "exec getCwd settled"
+                opts.cwd = cwd
+              else
+                console.log "cwd: #{cwd} is not a directory"
+                throw "cwd: #{cwd} is not a directory"
           .fail (error) ->
             console.log error.stack
             console.log "exec getCwd settled"
@@ -78,6 +84,11 @@ module.exports = (Interface) ->
       Q.allSettled(promises).then ->
         console.log "path", process.env['PATH']
         console.log "spawn", args[0], args[1..], opts
+        debugger
+        if fs.existsSync(args[0])
+          console.log "exists", args[0]
+        else
+          console.log "not exists", args[0]
         child_process.spawn args[0], args[1..], opts
 
       # if args[0] does not exist, we get a ENOENT error

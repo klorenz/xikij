@@ -2,6 +2,7 @@ Q               = require "q"
 {promised, getUserHome, getUserName} = require "./util"
 {RejectPath}    = require "./context"
 {extend, clone} = require "underscore"
+{RequestContextClass} = require "./request-context"
 path = require 'path'
 
 DEBUG = true
@@ -124,33 +125,7 @@ class Request
 
     context.getContextClass()
       .then (Context) =>
-
-        # this implements getting things from environment
-        class RequestContext extends Context
-          getProjectDirs: -> Q(opts.projectDirs or [])
-          getFilePath:    ->
-            unless opts.filePath
-              Q.fcall -> throw new Error("filename not defined")
-            else
-              Q(opts.filePath)
-
-          # this is home directory equivalent
-          getUserDir:     -> Q(opts.userDir or getUserHome())
-
-          # this is system user package equivalent
-          getXikijUserDir: -> @getUserName().then (username) =>
-            path.join @getXikij().userPackagesDir, "user_modules", username
-
-          # project dir is dependend on @filePath
-
-          getSettings: (path) ->
-            Q(xikij: extend({
-                xikijUserDirName:    ".xikij"
-                xikijProjectDirName: ".xikij"
-              },
-              opts))
-
-          getUserName: -> Q(opts.username or getUserName())
+        RequestContext = RequestContextClass(Context, opts)
 
         @getContext(new RequestContext(context)).then (context) =>
           @context = context

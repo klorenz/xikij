@@ -96,6 +96,7 @@ class PackageManager extends EventEmitter
       console.log "err loading packages", err
 
   add: (dir, name) ->
+    debugger
     pkg = new Package dir, name
 
     @loading.push pkg.load @xikij

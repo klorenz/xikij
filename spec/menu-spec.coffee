@@ -13,6 +13,16 @@ describe "Menu", ->
         xikij.request("py-hostname").then (hostname) =>
           expect(hostname).toEqual os.hostname()
 
+  describe "...any executable", ->
+    it "can provide help", ->
+      xikij = new Xikij packagesPath: "#{__dirname}/fixture/packages"
+
+      waitsForPromise ->
+        xikij.request("foo").then (x) =>
+          debugger
+          console.debug "x", xikij.packages.modules()
+          expect(x).toBe "xfoo"
+
   describe "menu manager", ->
     tempdir = null
     result = null

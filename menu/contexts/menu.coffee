@@ -1,41 +1,5 @@
 """
 
-+ /home/kiwi/github/xikij
-+ ~/
-+ ./
-+ /
-+ ?
-+ amazon
-+ bookmarklet
-+ contexts
-+ docs
-+ echo
-+ hostname
-+ inspect
-+ ip
-+ log
-- menu
-  + amazon.coffee
-  + bookmarklet.coffee
-  + contexts
-  + docs
-  + echo.coffee
-  + hostname.coffee
-  + inspect.coffee
-  + ip.coffee
-  + log.coffee
-  + menu.coffee
-  + packages.coffee
-  + path.coffee
-  + pwd.coffee
-  + terminal.coffee
-  + fogbugz.coffee
-+ packages
-+ path
-+ pwd
-+ terminal
-+ fogbugz
-
 """
 module.exports = (xikij) ->
   @doc = """
