@@ -81,6 +81,12 @@ module.exports = (xikij) ->
               @menuItem = o
               @menuPath = p[i+1..]
               return true
+            else
+              # directory with entries
+              @weight   = reqPath[..i].toPath().length
+              @menuName = p.toString()
+              @menuItem = o
+              @menuPath = p[i+1..]
           )
         return yes
 
@@ -175,7 +181,7 @@ module.exports = (xikij) ->
       @
       path     = @self "menuPath"
       menuItem = @self "menuItem"
-      menuName = menuItem.menuName
+      menuName = @self "menuName"
 
       console.debug "menu expanded menuItem", menuItem
       console.debug "menu expanded path", path
