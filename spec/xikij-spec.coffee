@@ -1,5 +1,6 @@
 {Xikij} = require '../lib/xikij'
 {consumeStream} = require "../lib/util"
+{keys} = require "underscore"
 
 path = require "path"
 _ = require 'underscore'
@@ -24,14 +25,20 @@ describe "Xikij", ->
     """
 
   it "should load packages", ->
+    loaded_event = false
 
     xikij = new Xikij packagesPath: false
+    xikij.event.on "loaded", ->
+      loaded_event = true
     xikij.initialize()
 
+    loaded = false
     waitsForPromise ->
-      xikij.packages.loaded()
+      xikij.packages.loaded().then -> loaded = true
 
-
+    runs ->
+      expect(loaded).toBe true
+      expect(loaded_event).toBe true
 
 
   # fit "should trigger 'loaded' event for packages", ->
@@ -113,6 +120,26 @@ describe "Xikij", ->
         ]
 
       xiki.initialize()
+
+    it "can load other packages", ->
+      xikij = new Xikij packagesPath: "#{__dirname}/fixture/packages"
+
+      waitsForPromise ->
+        xikij.initialized.then ->
+          console.log "finally loaded"
+          packages = xikij.packages.getPackages()
+          expect( (p.name for p in packages) ).toEqual [
+            "xikij",
+            "xikij-executable",
+            "xikij-python"
+          ]
+
+          expect(keys packages[1].modules).toEqual [
+             'xikij-executable/hostname', 'xikij-executable/foo',
+             'xikij-executable/hello', 'xikij-executable/hello_world'
+          ]
+
+      xikij.initialize()
 
   describe "when you request a xiki response", ->
     describe "when passing 'path'", ->
@@ -233,6 +260,7 @@ describe "Xikij", ->
           body: "./#{path.basename(__filename)}\n  @path",
           args: {filePath: __filename}
         }, (response) ->
+          debugger
           expect(response.data).toBe __filename
 
       it "can handle menus in directory ../", ->

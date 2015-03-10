@@ -350,7 +350,8 @@ checkPermissions = (file, mask, cb) ->
     if error
       cb error, false
     else
-      cb null, !!(mask && parseInt((stats.mode & parseInt("777", 8)).toString(8)[0]))
+      user_permissions = (stats.mode & parseInt("777", 8)).toString(8)[0]
+      cb null, !!(mask & parseInt(user_permissions))
 
 isFileExecutable = (path, cb) ->
   checkPermissions(path, 1, cb)

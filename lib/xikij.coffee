@@ -76,6 +76,9 @@ class Xikij
 
     @_initStarted   = false
 
+    if not opts.initialization?
+      opts.initialization = true
+
     if not opts.initialization
       @initialized = Q(true)
     else

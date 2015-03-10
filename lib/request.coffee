@@ -30,6 +30,54 @@ class Request
     unless @nodePaths
       @nodePaths = {}
 
+  selectContext: (ctx, reqPath, status) ->
+    {contextsDone, promises, deferred} = status
+    console.log "selectContext"
+
+    Q
+    .fcall =>
+      console.log reqPath, "done by", ctx, "?"
+      ctx.does(this, reqPath)
+
+    .then (result) =>
+      console.log "ctx does", result
+
+      unless result
+        #console.log "reject", reqPath.toPath(), "context", ctx
+        ctx.reject()
+
+      Q.when ctx.getContext(), (ctx) =>
+        contextsDone.push ctx
+        #console.log "contextsDone-ok", contextsDone
+
+        unless status.selectedContext?
+          status.selectedContext = ctx
+        else if ctx.weight > status.selectedContext.weight
+          status.selectedContext = ctx
+
+        if contextsDone.length == status.contexts.length
+          unless status.selectedContext?
+            status.selectedContext = status.context
+
+          #console.log "resolve-ok", reqPath.toPath(), "context", selectedContext
+          deferred.resolve(status.selectedContext)
+
+    .fail (error) =>
+      if not (ctx in contextsDone)
+        contextsDone.push ctx
+
+      #console.log "contextsDone-fail", contextsDone
+
+      unless error instanceof RejectPath
+        deferred.reject(error)
+      else if contextsDone.length == status.contexts.length
+        unless status.selectedContext?
+          status.selectedContext = status.context
+        #console.log "resolve-fail", reqPath.toPath(), "context", selectedContext
+        deferred.resolve(status.selectedContext)
+
+    .done()
+
   getContext: (context, reqPath) ->
     unless reqPath
       context = Q(context)
@@ -44,63 +92,29 @@ class Request
       return context
 
     else
-      promises = []
-      deferred = Q.defer()
+      console.log "get context for reqPath", reqPath
+
+      status =
+        promises: []
+        deferred: Q.defer()
+        selectedContext: null
+        contextsDone: []
 
       ID = ++_ID
 
       Q.when context, (context) =>
+        console.log "context", context
+        status.context = context
+
         context.getContexts().then (contexts) =>
-
-          selectedContext = null
-          contextsDone = []
-
+          console.log "contexts", contexts
+          status.contexts = contexts
           contexts.forEach (ContextClass, i) =>
-            ctx = new ContextClass(context)
+            @selectContext new ContextClass(context), reqPath, status
 
-            Q .fcall =>
-                ctx.does(this, reqPath)
-              .then (result) =>
+      return status.deferred.promise
 
-                unless result
-                  #console.log "reject", reqPath.toPath(), "context", ctx
-                  ctx.reject()
-
-                Q.when ctx.getContext(), (ctx) =>
-                  contextsDone.push ctx
-                  #console.log "contextsDone-ok", contextsDone
-
-                  unless selectedContext?
-                    selectedContext = ctx
-                  else if ctx.weight > selectedContext.weight
-                    selectedContext = ctx
-
-                  if contextsDone.length == contexts.length
-                    unless selectedContext?
-                      selectedContext = context
-
-                    #console.log "resolve-ok", reqPath.toPath(), "context", selectedContext
-                    deferred.resolve(selectedContext)
-
-              .fail (error) =>
-                if not (ctx in contextsDone)
-                  contextsDone.push ctx
-
-                #console.log "contextsDone-fail", contextsDone
-
-                unless error instanceof RejectPath
-                  deferred.reject(error)
-                else if contextsDone.length == contexts.length
-                  unless selectedContext?
-                    selectedContext = context
-                  #console.log "resolve-fail", reqPath.toPath(), "context", selectedContext
-                  deferred.resolve(selectedContext)
-
-              .done()
-
-      return deferred.promise
-
-    pathToArgs
+    #pathToArgs
 
     # respond: (responder) ->
     #   responder.apply @

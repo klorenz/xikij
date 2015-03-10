@@ -19,9 +19,10 @@ describe "Menu", ->
 
       waitsForPromise ->
         xikij.request("foo").then (x) =>
-          debugger
-          console.debug "x", xikij.packages.modules()
-          expect(x).toBe "xfoo"
+          expect(x.data).toBe """
+            - foo
+            - bar\n
+          """
 
   describe "menu manager", ->
     tempdir = null

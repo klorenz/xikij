@@ -5,24 +5,39 @@ executableLoader      = require "../lib/extensions/executable"
 {Xikij}               = require "../lib/xikij"
 {getOutput}           = require "../lib/util"
 os = require "os"
+path = require "path"
 
-fdescribe "extensions", ->
+describe "extensions", ->
+  context = null
+  xikij   = null
+
+  beforeEach ->
+    xikij = new Xikij packagesPath: false, initialization: false
+
+    RequestContext = RequestContextClass(xikij.Context, {
+      filePath:    __filename
+      username:    "vlad"
+      projectDirs: []
+      userDir:     "/tmp"
+    })
+
+    context = new RequestContext(xikij)
 
   describe "coffeescript", ->
     it "can load coffeescript extensions", ->
       subject =
         sourceFile: "#{__dirname}/fixture/packages/xikij-executable/menu/hostname.coffee"
+        menuType:   "coffee"
 
-      xikij = new Xikij packagesPath: false, initialization: false
-      context = {xikij}
-
-      promise = coffeeLoader.call(context, subject)
-
+      promise = coffeeLoader.load.call({xikij}, subject)
       result = null
 
       waitsForPromise ->
         promise.then (subject) ->
-          expect(subject.run()).toEqual os.hostname()
+          result = subject.run()
+
+      runs ->
+        expect(result).toEqual os.hostname()
 
 
   describe "executable", ->
@@ -31,10 +46,7 @@ fdescribe "extensions", ->
       subject =
         sourceFile: "#{__dirname}/fixture/packages/xikij-executable/menu/hello_world.sh"
 
-      xikij   = new Xikij packagesPath: false, initialization: false
-      context = {xikij}
-
-      promise = executableLoader.call(context, subject)
+      promise = executableLoader.load.call({xikij}, subject)
 
       result = null
 
@@ -43,18 +55,8 @@ fdescribe "extensions", ->
 
       waitsForPromise ->
         promise.then (subject) ->
-          RequestContext = RequestContextClass(xikij.Context, {
-              filePath:    __filename
-              username:    "vlad"
-              projectDirs: []
-              userDir:     "/tmp"
-            })
-
-          context = new RequestContext(xikij)
-
-          subject.run.call(context, {}).then (process) ->
-            getOutput(process).then (output) ->
-              result = output
+          subject.run.call(context, {}).then (output) ->
+            result = output
 
       runs ->
         expect(result).toBe """
@@ -64,3 +66,45 @@ fdescribe "extensions", ->
             - peach
             - apply\n
         """
+
+    it "does not load normal files as executables", ->
+      #expect(true).toBe(true)
+      subject =
+        sourceFile: "#{__dirname}/fixture/packages/xikij-executable/menu/hostname.coffee"
+
+      waitsForPromise ->
+        executableLoader.load.call({xikij}, subject).then (result) ->
+          expect(result).toBe false
+
+
+  describe "ModuleLoader", ->
+    it "can load a module", ->
+      xikij = new Xikij packagesPath: false, initialization: false
+      pkg =
+        dir: "#{__dirname}/fixture/packages/xikij-executable"
+        name: "xikij-executable"
+        modules: {}
+
+      updated = false
+
+      xikij.event.on "package:module-updated", (moduleName, subject) ->
+
+        filename = path.join(pkg.dir, 'menu', 'hostname.coffee')
+
+        m = pkg.modules["xikij-executable/hostname"]
+
+        console.log("m", m)
+        expect(m.menuType).toBe "coffee"
+        expect(m.sourceFile).toEqual filename
+        expect(m.fileName).toEqual filename
+        expect(m.moduleName).toBe "xikij-executable/hostname"
+        expect(m.menuName).toBe "hostname"
+
+        updated = true
+
+      waitsForPromise ->
+        menuDir = path.join(pkg.dir, 'menu')
+        xikij.moduleLoader.loadMenu(pkg, menuDir, 'hostname.coffee')
+
+      runs ->
+        expect(updated).toBe true

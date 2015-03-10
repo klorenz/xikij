@@ -58,14 +58,9 @@ class ModuleLoader
     #     if error
     #       throw error unless error is x.DoesNotExist or error is x.DoesExist
 
-    @registerLoader "coffeescript",
-    @registerLoader "python",
-    isExecutable = (subject, loader) ->
-      isFileExecutable sourceFile, (err, is_executable) =>
-        if is_executable
-          loader(subject)
-
-    @registerLoader "executable", executableLoader
+    @registerLoader coffeeLoader
+    @registerLoader pythonLoader
+    @registerLoader executableLoader
 
   # Public: registers extension loader
   #
@@ -74,12 +69,12 @@ class ModuleLoader
   #
   # `loader` must be a function, which returns a promis on either a XikijModule
   # or a false value.
-  registerLoader: (name, loader) ->
-    if typeof subject is "string"
-      suffix = subject
-      subject = (spec) -> return spec.menuType == suffix
+  registerLoader: (loader) ->
+    # if typeof subject is "string"
+    #   suffix = subject
+    #   subject = (spec) -> return spec.menuType == suffix
 
-    @loaders[name] = {subject, loader}
+    @loaders[loader.name] = loader.load
 
   # Extended: unregister an extension loader
   unregisterLoader: (name) ->
@@ -269,19 +264,27 @@ class ModuleLoader
     # if not moduleDir of pkg.modules
     #   pkg.modules[moduleDir] = pkg
 
+    loading = []
+
     for name, load of @loaders
-      load.call(this, xikijData)
+      console.log("loader: #{name}")
+      promise = load.call(this, xikijData)
         .then((subject) =>
+          console.log("moduleName: #{moduleName}", subject)
           if subject
+            pkg.modules[moduleName] = subject
+
+            console.log("pkg.modules", pkg.modules)
+
             @xikij.event.emit "package:module-updated", moduleName, subject
         )
         .fail((error) =>
           @handleError pkg, moduleName, error
         )
+      loading.push promise
 
-    return
+    return Q.allSettled(loading)
 
-    debugger
     switch suffix
 
       when "coffee"
@@ -363,7 +366,6 @@ class ModuleLoader
       else
 
         console.log "sourceFile", sourceFile
-        debugger
         isFileExecutable sourceFile, (err, is_executable) =>
           console.log "isFileExecutable", sourceFile, is_executable
           if is_executable

@@ -16,6 +16,7 @@ module.exports = (Interface, xikij) ->
 
     getContexts: (objects) -> Q.fcall =>
       named = objects?.named? ? false
+      console.log "xikij contexts", xikij._contexts
 
       if named
         [name, xikij._context[name]] for name in xikij._contexts

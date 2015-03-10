@@ -1,5 +1,9 @@
 util = require "../lib/util"
 
+fixture = "#{__dirname}/fixture"
+executable_file = "#{fixture}/packages/xikij-executable/menu/hello.sh"
+not_executable_file = "#{fixture}/packages/xikij-executable/menu/hostname.coffee"
+
 describe "Xiki Utilities", ->
   it "can extract indentation of text", ->
       expect(util.getIndent("")).toBe ""
@@ -16,6 +20,17 @@ describe "Xiki Utilities", ->
 
     # just to make clear that this function only removes indentation and does
     expect(util.removeIndent("  first\n    second\nthird\n", "  ")).toBe "first\n  second\nthird\n"
+
+  it "can tell, if a file is executable", ->
+
+    util.isFileExecutable executable_file, (error, result) ->
+      expect(result).toBe(true)
+      done()
+
+  it "can tell, if a file is not executable", ->
+    util.isFileExecutable not_executable_file, (error, result) ->
+      expect(result).toBe(false)
+      done()
 
   describe "when you make result ready for output", ->
     it "handles numbers", ->

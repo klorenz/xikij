@@ -26,7 +26,6 @@ class Package
 
   load: (xikij) ->
     console.log "load", @dir
-    xikij.moduleLoader.load this
 
     watchEventHandler = (event, filename) =>
       # event is 'rename' or 'change'
@@ -39,6 +38,9 @@ class Package
     # TODO: remove watcher on xikij close
     console.log "added watcher", @dir
     @watcher = fs.watch @dir, watchEventHandler
+
+    xikij.moduleLoader.load(this).then =>
+      console.log "PKG: #{@name} loaded", @modules, @settings
 
   asObject: (attributes...)->
     obj = {}
@@ -64,7 +66,7 @@ class Package
   toString: -> "name: #{@name}"
 
 
-class PackageManager extends EventEmitter
+class PackageManager
   constructor: (@xikij) ->
     @_packages = []
     @_user_packages = []
@@ -89,14 +91,15 @@ class PackageManager extends EventEmitter
       makeTree data, @_modules
 
   loaded: ->
-    Q.all(@loading).then (result) =>
-      @emit "loaded"
+    Q.allSettled(@loading).then (result) =>
+      @xikij.event.emit "loaded"
+      console.log "LOADED", result
       return result
     .fail (err) =>
       console.log "err loading packages", err
+      console.log "err loading packages", err.stack
 
   add: (dir, name) ->
-    debugger
     pkg = new Package dir, name
 
     @loading.push pkg.load @xikij
@@ -180,7 +183,6 @@ class PackageManager extends EventEmitter
 
   # get a module without respect of package (merged packages)
   getModule: (name) ->
-    debugger
 
     # if not @_modules?
     #   @_modules = {}

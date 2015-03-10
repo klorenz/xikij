@@ -61,24 +61,29 @@ For extension scripts:
 ###
 
 Q = require "q"
-{isFileExecutable} = require "../util.coffee"
+{isFileExecutable,getOutput} = require "../util.coffee"
 
-module.exports = (subject) ->
-  console.log "executable loader", subject
-  deferred = Q.defer()
+module.exports =
+  name: "executable"
+  load: (subject) ->
+    console.log "executable loader", subject
+    deferred = Q.defer()
 
-  isFileExecutable subject.sourceFile, (err, is_executable) =>
-    if err
-      deferred.reject(err)
-    else if not is_executable
-      deferred.resolve(false)
-    else
-      subject.doc = () ->
-        @execute(subject.sourceFile, "--help")
+    isFileExecutable subject.sourceFile, (err, is_executable) =>
+      if err
+        deferred.reject(err)
+      else if not is_executable
+        deferred.resolve(false)
+      else
+        subject.doc = () ->
+          @execute(subject.sourceFile, "--help").then (proc) ->
+            getOutput(proc)
 
-      subject.run = (request) ->
-        @execute("/bin/bash", subject.sourceFile)
+        subject.run = (request) ->
+          @execute("/bin/bash", subject.sourceFile).then (proc) ->
+            getOutput(proc)
 
-      deferred.resolve(subject)
+        console.log "executable loaded", subject
+        deferred.resolve(subject)
 
-  return deferred.promise
+    return deferred.promise
