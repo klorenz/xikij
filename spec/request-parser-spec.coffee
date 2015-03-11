@@ -292,16 +292,116 @@ describe "Request Parser", ->
     it "can parse multiple contexts in a tree", ->
       body = """
         ./foo/bar
-          @path
+          @filepath
         """
 
       parsed = rp.parseXikiRequestFromTree {body}
       expect(parsed).toDeepMatch {
         nodePaths: [
           { nodePath: [ {name: "."}, {name: "foo"}, {name: "bar"} ]}
-          { nodePath: [ {name: "path"} ] }
+          { nodePath: [ {name: "filepath"} ] }
         ]
       }
+
+    it "can parse multiline requests", ->
+      body = """
+        foo
+          @ hello = foo
+          @ bar = glork
+          @ env
+        """
+
+      parsed = rp.parseXikiRequestFromTree {body}
+      expect(parsed).toDeepMatch {
+        nodePaths: [
+          { nodePath: [ {name: "foo"} ]}
+          { nodePath: [ {name: "hello = foo"} ] }
+          { nodePath: [ {name: "bar = glork"} ] }
+          { nodePath: [ {name: "env"} ] }
+        ]
+      }
+
+    it "can parse multiline path requests", ->
+      body = """
+        /foo
+          /bar
+          /glork
+            - gnark
+        """
+
+      parsed = rp.parseXikiRequestFromTree {body}
+      expect(parsed).toDeepMatch {
+        nodePaths: [
+          { nodePath: [ {name: "foo"}, {name: "bar"}, {name: "glork"}, {name: "gnark"} ]}
+        ]
+      }
+
+    it "can parse non-multiline requests", ->
+      body = """
+        foo
+          -@ hello = foo
+          -@ bar = glork
+          -@ env
+        """
+
+      parsed = rp.parseXikiRequestFromTree {body}
+      expect(parsed).toDeepMatch {
+        nodePaths: [
+          { nodePath: [ {name: "foo"} ]}
+          { nodePath: [ {name: "env"} ] }
+        ]
+      }
+
+###
+    multiline string as parameter
+
+    a script/"""
+        this is
+        loads of
+        text
+        """
+
+
+    multiline string as script parameter
+
+    a script/$$$
+       echo "Hello world"
+       FOO="Bar"
+       ls
+       $$$
+
+    multiple lines as contexts
+
+    a script
+      @ foo
+      @ bar
+      @ glork
+
+    equivalent to
+
+    a script
+      @ foo
+        @ bar
+          @ glork
+
+    multiline context (for whatever reason)
+    a script/@@@
+      foo
+      bar
+      glork
+      @@@
+continued path (only continued if line starts with whitespace + "/")
+
+    a path
+      / foo
+      / bar
+      / glork
+      @ test
+        / x
+        / y
+      @
+
+###
 
       # expect(parsed).toDeepMatch {
       #     body: body

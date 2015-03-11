@@ -101,9 +101,6 @@ module.exports = (xikij) ->
       @menuPath = null
       @menuDir  = null
 
-      #try
-
-
       max_minlen = 0
 
 
@@ -145,7 +142,6 @@ module.exports = (xikij) ->
           return menuItem.doc
 
       return "Not implemented to get doc from sub-items"
-
 
       if @menuDir?
         """
@@ -208,13 +204,17 @@ module.exports = (xikij) ->
       # else it is an object
       return menuItem
 
+    initialized: () ->
+
+
 
     getSubject: (req) ->
       menuItem = @self "menuItem"
       console.debug "getSubject", menuItem
+
       if menuItem.menuName
         if menuItem.init
-          Q(menuItem.init()).then (value) => value ? menuItem
+          Q.when(menuItem.init()).then (value) => value ? menuItem
         else
           Q(menuItem)
       else

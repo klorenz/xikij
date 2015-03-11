@@ -4,6 +4,9 @@
 {Request}            = require "./request"
 {Path, PathFragment} = require "./path"
 {last}               = require "underscore"
+{getLogger}          = require "./logger"
+
+console = getLogger("xikij.request-parser")
 
 throw "Path not defined" unless Path
 
@@ -244,7 +247,7 @@ parseXikiRequestFromTree = ({path, body, action, args}) ->
       node_paths[node_paths.length-1] = more_node_paths[0]
       if more_node_paths.length > 1
         node_paths.push more_node_paths[1..]...
-        
+
       node_path = []
       node_paths.push node_path
       continue

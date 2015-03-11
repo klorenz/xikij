@@ -77,3 +77,23 @@ describe "Xikij Path", ->
     it "can split path foo/[X/Y]/foo", ->
       xpath = Path.split("foo/[X/Y]/bar")
       expect(xpath).toEqual [ "foo", "[X/Y]", "bar" ]
+
+    it "can split path foo/{... (1)}/foo", ->
+      xpath = Path.split("""
+          foo/{
+            first = foo
+            second = bar
+            }/bar
+          """)
+      expect(xpath).toEqual [ "foo", "{\n  first = foo\n  second = bar\n  }", "bar" ]
+
+    it "can split path foo/{... (2)}/foo", ->
+      xpath = Path.split("""
+          foo
+            {
+              first = foo
+              second = bar
+            }
+              bar
+          """)
+      expect(xpath).toEqual [ "foo", "{\n  first = foo\n  second = bar\n}", "bar" ]

@@ -1,4 +1,6 @@
 fs = require 'fs'
+{getLogger} = require "./logger"
+console = getLogger("xikij.Interface")
 
 # Provide an interface to xikij
 #

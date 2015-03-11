@@ -9,9 +9,10 @@ DEBUG = true
 # debug = (args...) ->
 #   console.debug "xikij:Request:", args... if DEBUG
 
+{getLogger} = require "./logger"
 
-unless console.debug
-  console.debug = ->
+console = getLogger("xikij.request")
+
 
 _ID = 0
 

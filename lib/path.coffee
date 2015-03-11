@@ -1,6 +1,8 @@
 {getIndent, startsWith, endsWith, strip, StringReader} = require "./util"
 {last, keys} = require "underscore"
 stream = require "stream"
+{getLogger} = require "./logger"
+console = getLogger("xikij.path")
 
 splitPath = (path) ->
   tokens = path.split /(\\.|[()\[\]{}<>"'\/])/
@@ -213,6 +215,8 @@ class Path
     text.pipe(transformer)
     #text.on "readable", -> transformer.write(text.read())
     #text.end()
+
+
 
 class SelectFromText extends stream.Transform
 

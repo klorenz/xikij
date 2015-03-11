@@ -12,10 +12,9 @@ module.exports = (Interface, xikij) ->
     userPackageUpdateMenu: (opts) ->
       {menu, content, module} = opts
 
-      debugger
+      console.log "user package update menu #{menu} -> start"
 
       @getXikijUserDir().then (userdir) =>
-        debugger
 
         if module?.sourceFile
           menupath = "#{userdir}/menu/#{module.menuName}.#{module.menuType}"
@@ -28,7 +27,8 @@ module.exports = (Interface, xikij) ->
         #   throw new Error("#{menu} is a directory")
 
         @makeDirs(path.dirname menupath).then (created) =>
+          console.log "user package update menu #{menu} -> write file #{menupath}"
+
           @writeFile(menupath, content).then =>
-            debugger
             if created
               xikij.packages.add userdir

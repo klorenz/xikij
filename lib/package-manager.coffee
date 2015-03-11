@@ -5,6 +5,7 @@ Q              = require "q"
 {makeTree}     = require "./util"
 {keys}         = require "underscore"
 {Path}         = require "./path"
+{getLogger}    = require "./logger"
 
 class Package
 
@@ -19,28 +20,47 @@ class Package
     @settings = {}
     @errors = null
 
+    debugger
+    @log = getLogger("xikij.Package", prefix: "(#{@name})", level: "debug")
+
   isUserPackage: () ->
     return "user_modules" in @dir
 
   getUserName: () -> @_username
 
   load: (xikij) ->
-    console.log "load", @dir
+    @log.debug "load package from directory", @dir
 
     watchEventHandler = (event, filename) =>
       # event is 'rename' or 'change'
-      console.log "file event", event, filename
+      @log.debug "watcher event:", event, filename
 
-      xikij.moduleLoader.load this, filename
+      xikij.moduleLoader.load(this, filename).then =>
+        @log.debug "reload #{filename}"
 
       # maybe send event, that module has been updated
 
+    if @watcher
+      @unwatch()
+
     # TODO: remove watcher on xikij close
-    console.log "added watcher", @dir
-    @watcher = fs.watch @dir, watchEventHandler
+    @log.debug "add watcher of #{@dir}"
+    @watcher = fs.watch @dir, {recursive: true}, watchEventHandler
+
+    xikij.event.on "shutdown", (xikij) =>
+      @unload(xikij)
 
     xikij.moduleLoader.load(this).then =>
-      console.log "PKG: #{@name} loaded", @modules, @settings
+      @log.debug "loaded", @modules, @settings
+
+  unwatch: ->
+    @log.debug "stop watcher of #{@dir}"
+    @watcher.close()
+    @watcher = null
+
+  unload: (xikij) ->
+    @log.debug "package(#{@name}) unload"
+    @unwatch()
 
   asObject: (attributes...)->
     obj = {}
@@ -80,7 +100,7 @@ class PackageManager
     @_modules = {}
 
     @xikij.event.on "package:module-updated", (name, module) =>
-      console.debug "package:module-updated", name, module
+      @log.debug "package:module-updated", name, module
 
       data = {}
       data["#{module.menuName}.#{module.menuType}"] = module
@@ -90,14 +110,15 @@ class PackageManager
       data["#{module.menuName}"] = module
       makeTree data, @_modules
 
+    @log = getLogger("xikij.PackageManager")
+
   loaded: ->
     Q.allSettled(@loading).then (result) =>
       @xikij.event.emit "loaded"
-      console.log "LOADED", result
+      @log.debug "loaded all packages", result
       return result
     .fail (err) =>
-      console.log "err loading packages", err
-      console.log "err loading packages", err.stack
+      @log.debug "error in loading packages", err.stack
 
   add: (dir, name) ->
     pkg = new Package dir, name
@@ -126,7 +147,6 @@ class PackageManager
   failed: ->
     result = []
     for pkg in @_packages
-      console.log "failed?", pkg
       result.push pkg if pkg.errors
 
     result

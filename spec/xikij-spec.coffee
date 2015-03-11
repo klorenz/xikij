@@ -13,16 +13,23 @@ describe "Xikij", ->
     + contexts
     + docs
     + echo
+    + filepath
     + hostname
     + inspect
     + ip
     + log
     + menu
     + packages
-    + path
     + pwd
     + terminal\n
     """
+
+  xikij = null
+
+  afterEach ->
+    if xikij
+      xikij.shutdown()
+      xikij = null
 
   it "should load packages", ->
     loaded_event = false
@@ -39,6 +46,8 @@ describe "Xikij", ->
     runs ->
       expect(loaded).toBe true
       expect(loaded_event).toBe true
+
+      xikij.shutdown()
 
 
   # fit "should trigger 'loaded' event for packages", ->
@@ -78,6 +87,7 @@ describe "Xikij", ->
         expect(hostname.moduleName).toBe("xikij/hostname")
         expect(hostname.run).toBeTruthy()
 
+
     it "should have loaded basic package", ->
       xiki = new Xikij packagesPath: false
 
@@ -102,13 +112,13 @@ describe "Xikij", ->
             "xikij/contexts/ssh"
             "xikij/docs/api"
             "xikij/echo"
+            "xikij/filepath"
             "xikij/hostname"
             "xikij/inspect"
             "xikij/ip"
             "xikij/log"
             "xikij/menu"
             "xikij/packages"
-            "xikij/path"
             "xikij/pwd"
             "xikij/terminal"
           ]
@@ -236,7 +246,7 @@ describe "Xikij", ->
               + log.coffee
               + menu.coffee
               + packages.coffee
-              + path.coffee
+              + filepath.coffee
               + pwd.coffee
               + terminal.coffee\n
           """
@@ -257,7 +267,7 @@ describe "Xikij", ->
 
       it "can return the selected path", ->
         doPromisedRequest {
-          body: "./#{path.basename(__filename)}\n  @path",
+          body: "./#{path.basename(__filename)}\n  @filepath",
           args: {filePath: __filename}
         }, (response) ->
           debugger

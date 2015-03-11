@@ -29,10 +29,11 @@ describe "Menu", ->
     result = null
     data = """
       module.exports = (xikij) ->
-        @run = -> "hello world"
+        @run = -> "hello from menu manager"
       """
 
     xikij = null
+    updated = false
 
     beforeEach ->
       tempdir = path.join (os.tmpdir or os.tmpDir)(), uuid.v4()
@@ -41,19 +42,22 @@ describe "Menu", ->
       updated = false
 
       xikij.event.on "package:module-updated", (name, module)->
+        console.log "package:module-updated", name, module
         if module.menuName == "amazon" and module.package.name != "xikij"
           debugger
           updated = true
 
       waitsForPromise ->
-        xikij.request(path: "menu/amazon", input: data).then (response) ->
+        xikij.request(path: "menu/amazon.coffee", input: data).then (response) ->
           result = response
 
-      waitsFor -> updated
 
     afterEach ->
       if fs.existsSync tempdir
         xikij.remove(tempdir)
+
+      if xikij
+        xikij.shutdown()
 
     it "can write a menu", ->
       #streamConsumed = false
@@ -67,14 +71,17 @@ describe "Menu", ->
         #   expect(string).toEqual(data)
         #   streamConsumed = true
 
+      waitsFor -> updated
       # waitsFor ->
       #   streamConsumed is true
 
     it "can run new menu", ->
+      waitsFor -> updated
+
       waitsForPromise ->
         result = xikij.request(path: "amazon").then (response) ->
           result = response
 
       runs ->
         expect(result.type).toBe "string"
-        expect(result.data).toBe "hello world"
+        expect(result.data).toBe "hello from menu manager"

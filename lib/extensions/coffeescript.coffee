@@ -1,11 +1,14 @@
 Q = require "q"
 {extend} = require "underscore"
 util = require "../util"
+{getLogger} = require "../logger"
+
+log = getLogger("xikij.ModuleLoader.coffee")
 
 module.exports =
   name: "coffeescript"
   load: (subject) ->
-    console.log "coffeescript loader", subject
+    log.log "coffeescript loader", subject
     return Q(false) if subject.menuType != "coffee"
 
     resolved = require.resolve subject.sourceFile

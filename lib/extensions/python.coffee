@@ -1,5 +1,7 @@
 Q = require "q"
+{getLogger} = require "../logger"
 
+console = getLogger("xikij.ModuleLoader.python")
 module.exports =
   name: "python"
   load: (subject) ->

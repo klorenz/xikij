@@ -14,6 +14,8 @@ pythonLoader     = require "./extensions/python"
 coffeeLoader     = require "./extensions/coffeescript"
 executableLoader = require "./extensions/executable"
 
+{getLogger} = require "./logger"
+
 class BridgedModule
 
   constructor: (@bridge, @spec) ->
@@ -62,6 +64,8 @@ class ModuleLoader
     @registerLoader pythonLoader
     @registerLoader executableLoader
 
+    @console = getLogger("xikij.ModuleLoader")
+
   # Public: registers extension loader
   #
   # * `name`     The {String} name of the loader
@@ -83,7 +87,7 @@ class ModuleLoader
   _loadMenu: (pkg, menuBase) ->
       dir = path.join pkg.dir, menuBase
 
-      console.log "load package from filename #{filename}"
+      @console.debug "ModuleLoader: _loadMenu(#{pkg.name}, #{menuBase})"
 
       @xikij.exists(dir).then (exists) =>
         return unless exists
@@ -98,14 +102,14 @@ class ModuleLoader
       bases.push "#{prefix}-posix"
 
     if filename
-      console.log "load package from filename #{filename}:", bases
+      @console.debug "ModuleLoader: _load(#{pkg.name}, #{filename})", bases
+
       for base in bases
         dir = path.join(pkg.dir, base)
         entry = path.relative dir, filename
         unless entry.match /^\.\./
           return @[loader] pkg, dir, entry
 
-      console.log "nothing to do for #{filename}"
       return Q(null)
 
     promises = []
@@ -113,7 +117,7 @@ class ModuleLoader
     bases.forEach (base) =>
       promises.push @[loader] pkg, base
 
-    console.log "promises", promises
+#    console.log "promises", promises
 
     return Q.all(promises)
 
@@ -181,10 +185,11 @@ class ModuleLoader
       moduleName: moduleName
       message: error.toString()
       error: error
-    console.log error.stack.toString()
+
+    @console.error error.stack
 
   loadSettings: (pkg, dir, entry) ->
-    console.log ">> load settings", pkg, dir, entry
+    @console.debug "ModuleLoader(#{pkg.name}) load settings", pkg, dir, entry
 
     unless entry?
       dir = path.join pkg.dir, dir
@@ -196,7 +201,7 @@ class ModuleLoader
 
     sourceFile = path.join dir, entry
 
-    console.log "load settings #{sourceFile}"
+    @console.debug "ModuleLoader(#{pkg.name} load settings from #{sourceFile}"
 
     name = entry.replace(/\..*$/, '') # strip extensions
     settingsName = "#{pkg.name}/#{name}"
@@ -235,7 +240,7 @@ class ModuleLoader
 
     sourceFile = path.join dir, entry
 
-    console.log "load menu #{sourceFile}"
+    @console.debug "ModuleLoader(#{pkg.name} load menu from #{sourceFile}"
 
     moduleName = ""
 
@@ -250,7 +255,7 @@ class ModuleLoader
     name = entry.replace(/\..*$/, '') # strip extensions
     moduleName = "#{pkg.name}/#{name}"
 
-    console.log "load module #{moduleName} (#{suffix})"
+    @console.debug "ModuleLoader(#{pkg.name}) load module #{moduleName} (#{suffix})"
 
     xikijData =
       sourceFile: sourceFile
@@ -267,146 +272,26 @@ class ModuleLoader
     loading = []
 
     for name, load of @loaders
-      console.log("loader: #{name}")
-      promise = load.call(this, xikijData)
-        .then((subject) =>
-          console.log("moduleName: #{moduleName}", subject)
-          if subject
-            pkg.modules[moduleName] = subject
+      ( (name, load) =>
+          @console.debug "ModuleLoader(#{pkg.name}) try loader #{name} for #{moduleName} (#{suffix})"
+          promise = load.call(this, xikijData)
+            .then((subject) =>
+              if subject
+                pkg.modules[moduleName] = subject
 
-            console.log("pkg.modules", pkg.modules)
+                @console.debug "ModuleLoader(#{pkg.name}) #{name} loaded #{moduleName}", subject
 
-            @xikij.event.emit "package:module-updated", moduleName, subject
-        )
-        .fail((error) =>
-          @handleError pkg, moduleName, error
-        )
-      loading.push promise
+                @xikij.event.emit "package:module-updated", moduleName, subject
+              else
+                @console.debug "#{name} cannot load #{moduleName}"
+            )
+            .fail((error) =>
+              @handleError pkg, moduleName, error
+            )
+          loading.push promise
+      )(name, load)
 
     return Q.allSettled(loading)
-
-    switch suffix
-
-      when "coffee"
-        return Q.fcall =>
-          try
-            resolved = require.resolve sourceFile
-            if resolved of require.cache
-              delete require.cache[resolved]
-
-            refined = factory = require sourceFile
-
-            if factory instanceof Function
-              refined = factory.call xikijData, @xikij
-
-              # now xikijData may be extended or refined may have data.
-              # what if both present?
-
-              refined = xikijData
-
-              # unless refined
-              #   refined = xikijData
-
-            unless refined.moduleName
-              extend(refined, xikijData)
-
-            pkg.modules[moduleName] = refined
-
-            for k,v of refined
-              if util.isSubClass(v, @xikij.Context)
-                @xikij.addContext k, v
-
-            @xikij.event.emit "package:module-updated", moduleName, refined
-
-          catch error
-            @handleError pkg, moduleName, error
-
-        # do it like this:
-        #  - require the module
-        #  - if the module returns a function:
-        #    call function with (xikij)
-        #  - if the module returns a class:
-        #    create instance with (xikij)
-
-        # return @xikij.readFile(sourceFile).then (content) =>
-        #   @loadCoffeeScript(content.toString(), xikijData)
-        #     .then (context) =>
-        #       pkg.modules.push context
-        #
-        #       for k,v of context
-        #         if util.isSubClass(v, @xikij.Context)
-        #           @xikij.addContext(k,v)
-        #     .fail (error) =>
-        #       @handleError pkg, moduleName, error
-      when "py"
-        return @xikij.readFile(sourceFile).then (content) =>
-          if content.match /^#!/
-            # execute file for menu args-protocol
-            throw new Error "not implemented"
-
-          else
-            bridge = @xikij.getBridge(suffix)
-            if bridge?
-              bridge.request("registerModule", xikijData, content)
-                .then (result) =>
-                  module = new BridgedModule bridge, result
-                  pkg.modules[moduleName] = module
-                  #pkg.modules.push module
-
-                  for k,v of context
-                    if util.isSubClass(v, @xikij.Context)
-                      @xikij.addContext(k,v)
-
-                  @xikij.event.emit "package:module-updated", moduleName, xikijData
-                .fail (error) =>
-                  @handleError pkg, moduleName, error
-            else
-              throw new Error "not implemented"
-
-      else
-
-        console.log "sourceFile", sourceFile
-        isFileExecutable sourceFile, (err, is_executable) =>
-          console.log "isFileExecutable", sourceFile, is_executable
-          if is_executable
-            xikij = @xikij
-
-            xikijData.doc = ->
-              @executeShell sourceFile, "--help"
-
-            xikijData.run = (request) ->
-              @executeShell sourceFile, request.path
-
-            @xikij.event.emit "package:module-updated", moduleName, xikijData
-
-      #     if isexecutable
-      #       xikij = @xikij
-      #
-      #       xikijData.doc = ->
-      #         @executeShell sourceFile, "--help"
-      #
-      #       xikijData.run = (request) ->
-      #         @executeShell sourceFile, request.path
-
-
-      # if isexecutable
-      # foo.sh => whatever there comes, if is json compilable or cson compilable
-      # do it and this is result
-      #
-      # foo.sh + => Do a full expanded menu, whatever that means, default same
-      #    like without args
-      #
-      # foo.sh first => expand menu item "first"
-      #
-      #
-      # args are passed as --arg foo or better arg=foo ?
-      #
-      # input is passed as stdin
-      #
-      # result:
-      # - json
-      # - cson
-      # - xikij text (parsed into obj)
 
 
 module.exports = {ModuleLoader}

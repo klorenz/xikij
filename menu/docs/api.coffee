@@ -1,7 +1,8 @@
-@doc = ->
-  
-  result = xikij.Interface.getDoc()
-  console.log "api doc", result
-  return result
+module.exports = (xikij) ->
+  @doc = ->
 
-@run = (request) -> request.path.selectFromObject @doc()
+    result = xikij.Interface.getDoc()
+    console.log "api doc", result
+    return result
+
+  @run = (request) -> request.path.selectFromObject @doc()

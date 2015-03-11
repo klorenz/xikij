@@ -1,4 +1,6 @@
 Q = require "q"
+{getUserHome, getUserName} = require "./util"
+path = require "path"
 
 RequestContextClass = (Context, opts) ->
   {projectDirs, filePath, userDir, username} = opts

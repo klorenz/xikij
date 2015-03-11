@@ -14,6 +14,9 @@ Q               = require "q"
 fs              = require "fs"
 {Context}       = require "./context"
 cli             = require "./xikij-cli"
+{getLogger}     = require "./logger"
+
+log = getLogger("xikij", level: "debug")
 
 issubclass = (B, A) -> B.prototype instanceof A
 
@@ -22,7 +25,6 @@ getuser = (req) ->
   # get user from environment (running this process)
 
 {PackageManager} = require "./package-manager"
-
 
 class Xikij
 
@@ -95,8 +97,11 @@ class Xikij
     else
       null
 
+  shutdown: ->
+    @event.emit "shutdown", @
+
   on: (event, callback) ->
-    console.log "event", event
+    log.debug "event", event
 
   mixInterfacesInto: (target) ->
     @Interface.mixInto target
@@ -109,7 +114,7 @@ class Xikij
     opts = opts or {}
     _.extend @opts, opts
 
-    console.log "opts: ", @opts
+    log.debug "opts: ", @opts
 
 
     userDir  = @opts.userDir  ? util.getUserHome()
@@ -122,7 +127,7 @@ class Xikij
     else
       @userPackagesDir = path.resolve userDir, userBase
 
-    console.log "userPackagesDir", @userPackagesDir
+    log.debug "userPackagesDir", @userPackagesDir
 
     #@userPackagesDir = path.resolve userDir, userBase
 
@@ -161,20 +166,20 @@ class Xikij
     for p in packagesPath
       p = path.normalize(p)
 
-      console.log "loading packages from #{p}"
+      log.debug "loading packages from #{p}"
 
       for e in fs.readdirSync p
         _path = path.join(p, e)
         stat = fs.statSync _path
         if stat.isDirectory()
-          console.log "add", _path
+          log.debug "add", _path
           @packages.add _path
 
     @packages.loaded()
       .then =>
         @initialization.resolve(true)
       .fail (err) =>
-        console.log err.stack
+        log.debug err.stack
         @initialization.resolve(false)
 
   # GET [action], path, [args]
