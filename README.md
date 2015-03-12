@@ -10,7 +10,7 @@ This is not yet a program running on its own.  It is a library still.
 
 ```
 /home/kiwi
-  $ ls -al
+  $ ls
 
 root@havanna:/var/deploy
   $ ls
@@ -19,7 +19,24 @@ root@havanna:/var/deploy
 TODO
 ----
 
-xikij does not work on untitled file, because tries to read file path (atom-xikij)
+- xikij does not work on untitled file, because tries to read file path (atom-xikij)
+- auto append path to context, if nothing else given
+
+  ```
+    $ svn ls some_url
+       a
+       b
+       c
+  ```
+
+  selecting b => means executing ``$ svn ls some_url/b`` at b
+
+  Having ``$ ls`` selecting an entry under it, results in ``$ ls entry``
+  selecting subentry in this, does a ``$ ls entry/subentry`` and so on.
+
+
+
+
 
 Features
 --------
@@ -40,6 +57,9 @@ a script/"""
     this is
     loads of
     text
+    """
+    /"""
+    next parameter
     """
 
 a script

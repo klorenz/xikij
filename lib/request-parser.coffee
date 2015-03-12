@@ -4,9 +4,7 @@
 {Request}            = require "./request"
 {Path, PathFragment} = require "./path"
 {last}               = require "underscore"
-{getLogger}          = require "./logger"
-
-console = getLogger("xikij.request-parser")
+console = (require "./logger")("xikij.request-parser")
 
 throw "Path not defined" unless Path
 

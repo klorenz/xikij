@@ -4,6 +4,8 @@ module.exports = (xikij) ->
     on a remote machine.
     """
 
+  console = xikij.getLogger(@moduleName)
+
   { getOutput, consumeStream, makeCommand,
     xikijBridgeScript } = xikij.util
 
@@ -33,12 +35,16 @@ module.exports = (xikij) ->
         [cmd, user, host, port, cwd] = m
         path = reqPath.shift()
         @sshData = {cmd, user, host, port, cwd}
+
         key = "#{user}@#{host}"
+        @console = xikij.getLogger(@moduleName, "(#{key})")
 
         SSH = @constructor
 
         # unless bridge installed, install it
         unless key of SSH.bridges
+          @console.debug "install bridge"
+
           SSH.bridges[key] = null
 
           # copy xikij.py
@@ -47,38 +53,45 @@ module.exports = (xikij) ->
             cmd = cmd.concat ["-p", port]
           cmd.push key
 
-          console.log "ssh cmd", cmd
+          @console.debug "basic SSH cmd", cmd
 
           copyCmd = cmd.concat ["sh", "-c", "cat > .xikijbridge.py"]
 
+          @console.debug "copyCmd", copyCmd
+
           bridgeScript = xikijBridgeScript()
+
+          @console.debug "will use", bridgeScript
 
           deferred = Q.defer()
           SSH.bridges[key] = deferred.promise
 
           @context.openFile(bridgeScript)
             .then (stream) =>
+
               @context.execute(copyCmd...).then (proc) =>
                 stream.pipe(proc.stdin)
                 proc.on "exit", =>
-                  console.log "copyCmd cmd", cmd
+                  @console.debug "copyCmd cmd", cmd
 
                   cmdPrefix = cmd.concat ["python"]
 
-                  console.log "cmdPrefix", cmdPrefix
+                  @console.debug "cmdPrefix", cmdPrefix
                   data = {
                     xikijBridge: ".xikijbridge.py",
                     cmdPrefix:   cmdPrefix,
                     onExit:      => delete SSH.bridges[key]
                     }
-                  console.log "data", data
+                  @console.debug "data", data
 
                   bridge = new xikij.Bridge data
-                  console.log "deferred", deferred
+
+                  @console.debug "deferred", deferred
                   # now install the bridge
                   deferred.resolve bridge
 
-                  console.log "promise resolved"
+                  @console.debug "promise resolved"
+
             .fail (error) ->
               deferred.reject(error)
 
@@ -90,7 +103,8 @@ module.exports = (xikij) ->
 
     # this method will always be called with instance of this object instance
     sshBridged: (args...) ->
-      console.log "bridged", args
+      @console.log "sshBridged()", args
+
       @bridge
         .then (bridge) =>
           bridge.request @, args...
@@ -125,7 +139,6 @@ module.exports = (xikij) ->
     isDirectory: (filename) -> @self('sshBridged') "isDirectory", filename
 
     shellExpand: (name) ->
-      
       @self('sshBridged') "shellExpand", name
 
     openFile: (filename) -> @self('sshBridged') "openFile", filename

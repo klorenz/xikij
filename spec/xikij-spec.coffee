@@ -240,13 +240,13 @@ describe "Xikij", ->
               + contexts
               + docs
               + echo.coffee
+              + filepath.coffee
               + hostname.coffee
               + inspect.coffee
               + ip.coffee
               + log.coffee
               + menu.coffee
               + packages.coffee
-              + filepath.coffee
               + pwd.coffee
               + terminal.coffee\n
           """

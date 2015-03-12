@@ -9,9 +9,7 @@ DEBUG = true
 # debug = (args...) ->
 #   console.debug "xikij:Request:", args... if DEBUG
 
-{getLogger} = require "./logger"
-
-console = getLogger("xikij.request")
+getLogger = require "./logger"
 
 
 _ID = 0
@@ -21,31 +19,38 @@ class Request
     {@body, @nodePaths, @args, @action, @input} = opts
     {@before, @after, @prefix} = opts
 
-    console.log "args2", @args
+    @console = getLogger "xikij.Request",
+      prefix: "("+[x.toString() for x in @nodePaths].join("@")+")"
+
+    @console.debug "created"
+    @console.debug ".body", @body
+    @console.debug ".nodePaths", @nodePaths
+    @console.debug ".args", @args
+    @console.debug ".action", @action
+    @console.debug ".input", @input
 
     for k,v of opts
       this[k] = v
 
-    console.log "args3", @args
+#    console.log "args3", @args
 
     unless @nodePaths
       @nodePaths = {}
 
   selectContext: (ctx, reqPath, status) ->
     {contextsDone, promises, deferred} = status
-    console.log "selectContext"
+    @console.debug "selectContext()", ctx, reqPath, status
 
     Q
     .fcall =>
-      console.log reqPath, "done by", ctx, "?"
       ctx.does(this, reqPath)
 
     .then (result) =>
-      console.log "ctx does", result
-
       unless result
         #console.log "reject", reqPath.toPath(), "context", ctx
-        ctx.reject()
+        return ctx.reject()
+
+      @console.debug ctx, "does", reqPath
 
       Q.when ctx.getContext(), (ctx) =>
         contextsDone.push ctx
@@ -80,20 +85,21 @@ class Request
     .done()
 
   getContext: (context, reqPath) ->
+    console = @console
     unless reqPath
       context = Q(context)
 
       @nodePaths.forEach (reqPath) =>
-        console.log "reqPath"
+        console.debug "getContext() reqPath"
         context = context.then (ctx) =>
           c = @getContext(ctx, reqPath)
-          console.log "reqPath", reqPath, "context", c
+          console.debug "getContext() reqPath", reqPath, "context", c
           c
 
       return context
 
     else
-      console.log "get context for reqPath", reqPath
+      console.log "getContext() get context for reqPath", reqPath
 
       status =
         promises: []
@@ -133,6 +139,7 @@ class Request
 
   # returns context, such that you can react on its result
   process: (context) ->
+    console = @console
 
     opts = @args or {}
 

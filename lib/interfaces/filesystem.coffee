@@ -6,6 +6,8 @@ fs     = require 'fs'
 stream = require 'stream'
 Q      = require "q"
 
+console = (require '../logger')("xikij.interface.filesystem")
+
 class DoesNotExist extends Error
   constructor: -> super()
 

@@ -28,7 +28,6 @@ class InputProvider extends stream.Writable
 
     @bridge.write req: @request.request.req, input: null
 
-
 class ProcessProvider extends EventEmitter
   constructor: (bridge, request) ->
     @stdout  = stream.PassThrough()
@@ -55,6 +54,8 @@ class XikijBridge
 
     @cmd = cmdPrefix.concat [ xikijBridge ]
 
+    @console = (require "./logger")('xikij.Bridge', "(#{@cmd})")
+
     try
       @bridge = child_process.spawn @cmd[0], @cmd[1..]
 
@@ -74,7 +75,7 @@ class XikijBridge
       stderr = ''
       @bridge.stderr.on "data", (data) =>
         stderr += data.toString()
-        console.log "err", data.toString()
+        @console.log "err", data.toString()
 
       if onExit
         @bridge.on "exit", (result) =>
@@ -87,12 +88,12 @@ class XikijBridge
       @requests = {}
 
     catch error
-      console.log error
+      @console.log error
       @bridge = error
 
   response: (s) ->
 
-    console.log "response: #{s}"
+    @console.debug "response", s
 
     response = JSON.parse(s)
     uid = response.res
@@ -177,7 +178,7 @@ class XikijBridge
         args: args
       }
 
-    console.log "bridged req", req
+    @console.debug "request", req
 
     @write req.request
 

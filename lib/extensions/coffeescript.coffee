@@ -1,9 +1,7 @@
-Q = require "q"
+Q        = require "q"
 {extend} = require "underscore"
-util = require "../util"
-{getLogger} = require "../logger"
-
-log = getLogger("xikij.ModuleLoader.coffee")
+util     = require "../util"
+log      = (require "../logger")("xikij.ModuleLoader.coffee")
 
 module.exports =
   name: "coffeescript"

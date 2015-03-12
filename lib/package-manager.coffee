@@ -5,7 +5,7 @@ Q              = require "q"
 {makeTree}     = require "./util"
 {keys}         = require "underscore"
 {Path}         = require "./path"
-{getLogger}    = require "./logger"
+getLogger    = require "./logger"
 
 class Package
 
@@ -54,9 +54,10 @@ class Package
       @log.debug "loaded", @modules, @settings
 
   unwatch: ->
-    @log.debug "stop watcher of #{@dir}"
-    @watcher.close()
-    @watcher = null
+    if @watcher
+      @log.debug "stop watcher of #{@dir}"
+      @watcher.close()
+      @watcher = null
 
   unload: (xikij) ->
     @log.debug "package(#{@name}) unload"

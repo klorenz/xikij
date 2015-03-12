@@ -10,6 +10,8 @@ module.exports = (xikij) ->
   Q    = xikij.Q
   Path = xikij.Path
 
+  console = xikij.getLogger(@moduleName)
+
   class @Menu extends xikij.Context
     _matchPath: (a, b) ->
       minlen = min(a.length, b.length)
@@ -73,8 +75,6 @@ module.exports = (xikij) ->
 
             console.debug "found", o, p, i
 
-            debugger
-
             if o.moduleName?
               @weight   = reqPath[..i].toPath().length
               @menuName = o.menuName
@@ -91,7 +91,7 @@ module.exports = (xikij) ->
         return yes
 
       catch error
-        console.log "warning in menu.does:", error.stack
+        console.warn error.stack
 
       return no
 
@@ -173,7 +173,6 @@ module.exports = (xikij) ->
             return @module.doc
 
     expanded: (request) ->
-      debugger
       @
       path     = @self "menuPath"
       menuItem = @self "menuItem"
@@ -204,9 +203,7 @@ module.exports = (xikij) ->
       # else it is an object
       return menuItem
 
-    initialized: () ->
-
-
+    init: () ->
 
     getSubject: (req) ->
       menuItem = @self "menuItem"
@@ -219,8 +216,3 @@ module.exports = (xikij) ->
           Q(menuItem)
       else
         Q(null)
-
-      # if @menuPath?
-      #   Q(null)
-      # else
-      #   Q(@module)

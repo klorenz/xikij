@@ -91,4 +91,4 @@ getLogger = (name, opts) ->
   return rootLogger unless name
   rootLogger.getLogger({name, prefix, level})
 
-module.exports = {getLogger}
+module.exports = getLogger

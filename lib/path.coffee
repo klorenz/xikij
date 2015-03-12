@@ -1,8 +1,7 @@
 {getIndent, startsWith, endsWith, strip, StringReader} = require "./util"
 {last, keys} = require "underscore"
 stream = require "stream"
-{getLogger} = require "./logger"
-console = getLogger("xikij.path")
+console = (require "./logger")("xikij.path")
 
 splitPath = (path) ->
   tokens = path.split /(\\.|[()\[\]{}<>"'\/])/

@@ -6,7 +6,7 @@
 # ssh connection, for keeping a connection open and run things
 # there
 #
-import sys, json, os, uuid, subprocess
+import sys, json, os, uuid, subprocess, re
 from types import GeneratorType
 
 PY3 = sys.version_info[0] >= 3
@@ -169,17 +169,17 @@ class Shell:
 
   def registerModule(self, data, content):
     import imp
-    modName = data.moduleName.replace("/", ".")
-    m = imp.new_module(modName)
-    m.__file__ = data.sourceFile
-    m.os = os
-    m.re = re
-    m.sys = sys
-    m.xikij = Xikij
+    modName    = data['moduleName'].replace('-', '_').replace("/", ".")
+    m          = imp.new_module(modName)
+    m.__file__ = data['sourceFile']
+    m.os       = os
+    m.re       = re
+    m.sys      = sys
+    #m.xikij    = Xikij
 
-    code = compile(content, filename=data.sourceFile, mode="exec")
+    code = compile(content, filename=data['sourceFile'], mode="exec")
     exec_code(code, m.__dict__)
-    modules[data.moduleName] = m
+    modules[data['moduleName']] = m
 
     result = data.copy()
     result.update({'callables': [], 'contexts': []})

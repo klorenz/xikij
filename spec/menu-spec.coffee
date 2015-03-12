@@ -6,8 +6,13 @@ fs      = require 'fs'
 
 describe "Menu", ->
   describe "...written in python", ->
-    it "can access xikij API", ->
+    fit "can access xikij API", ->
       xikij = new Xikij packagesPath: "#{__dirname}/fixture/packages"
+
+      waitsForPromise ->
+        xikij.initialized.then () =>
+          debugger
+          xikij.packages.getModule("py-hostname")
 
       waitsForPromise ->
         xikij.request("py-hostname").then (hostname) =>
@@ -65,7 +70,7 @@ describe "Menu", ->
       runs ->
         expect(result.type).toBe "action"
         expect(result.data.action).toBe "message"
-        expect(result.data.message).toBe "menu amazon updated"
+        expect(result.data.message).toBe "menu amazon.coffee updated"
 
         # xikij.util.consumeStream result.data, =>
         #   expect(string).toEqual(data)

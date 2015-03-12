@@ -62,9 +62,7 @@ For extension scripts:
 
 Q = require "q"
 {isFileExecutable,getOutput} = require "../util.coffee"
-{getLogger} = require "../logger"
-
-console = getLogger("xikij.ModuleLoader.executable")
+console = (require "../logger")("xikij.ModuleLoader.executable")
 
 module.exports =
   name: "executable"

@@ -1,7 +1,7 @@
 uuid = require "uuid"
 child_process = require "child_process"
 
-describe "xikijbridge.py", ->
+fdescribe "xikijbridge.py", ->
 
   it "can handle requests", ->
     p = child_process.spawn("#{__dirname}/../bin/xikijbridge.py")

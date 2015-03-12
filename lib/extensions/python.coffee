@@ -1,12 +1,15 @@
 Q = require "q"
-{getLogger} = require "../logger"
+console = (require "../logger")("xikij.ModuleLoader.python")
+{clone} = require "underscore"
+{BridgedModule} = require "../xikij-bridge"
 
-console = getLogger("xikij.ModuleLoader.python")
 module.exports =
   name: "python"
   load: (subject) ->
     console.log "python loader", subject
     return Q(false) unless subject.menuType is "py"
+
+    debugger
 
     return @xikij.readFile(subject.sourceFile).then (content) =>
       content = content.toString()
@@ -15,22 +18,33 @@ module.exports =
         throw new Error "not implemented"
 
       else
+        debugger
         bridge = @xikij.getBridge(subject.menuType)
+
         if bridge?
-          return bridge.request("registerModule", subject, content)
-            .then (result) =>
-              module = new BridgedModule bridge, result
-              #subject.pkg.modules[moduleName] = module
-              #pkg.modules.push module
+          return subject.bridged(@xikij, bridge, content)
 
-              for k,v of context
-                if util.isSubClass(v, @xikij.Context)
-                  @xikij.addContext(k,v)
-
-              @xikij.event.emit "package:module-updated", moduleName, xikijData
-
-              return module
-            .fail (error) =>
-              @handleError pkg, moduleName, error
+          # xikijData = clone(subject)
+          # xikijData.package = {
+          #   dir: subject.package.dir
+          #   name: subject.package.name
+          # }
+          #
+          # return bridge.request(@xikij, "registerModule", xikijData, content)
+          #   .then (result) =>
+          #     subject.bridged bridge, result
+          #     #subject.pkg.modules[moduleName] = module
+          #     #pkg.modules.push module
+          #
+          #     # find out if there are any contexts defined
+          #     # for k,v of context
+          #     #   if util.isSubClass(v, @xikij.Context)
+          #     #     @xikij.addContext(k,v)
+          #
+          #     #@xikij.event.emit "package:module-updated", moduleName, subject
+          #
+          #     return subject
+          #   .fail (error) =>
+          #     @handleError subject.package, subject.moduleName, error
         else
           throw new Error "not implemented"

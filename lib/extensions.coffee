@@ -2,7 +2,7 @@ path   = require "path"
 events = require "events"
 fs     = require "fs"
 util   = require "./util"
-{extend}      = require "underscore"
+{extend, clone}      = require "underscore"
 vm     = require "vm"
 Q      = require "q"
 {Settings} = require "./settings"
@@ -14,17 +14,35 @@ pythonLoader     = require "./extensions/python"
 coffeeLoader     = require "./extensions/coffeescript"
 executableLoader = require "./extensions/executable"
 
-{getLogger} = require "./logger"
+getLogger = require "./logger"
 
 class BridgedModule
-
   constructor: (@bridge, @spec) ->
     for entry in @spec.callables
       @[entry] = (args...) =>
         @bridge.request "moduleRun", @spec.moduleName, args
 
 class XikijModule
-  constructor: ({@fileName, @moduleName, @settingsName, @package, @platform}) ->
+  constructor: ({@fileName, @moduleName, @settingsName, @package, @platform, @menuType, @menuName, @sourceFile}) ->
+
+  bridged: (xikij, bridge, content) ->
+    info = clone(@)
+    info.package =
+      dir: @package.dir
+      name: @package.name
+
+    bridge.request(xikij, "registerModule", info, content)
+      .then (spec) =>
+        debugger
+        @bridge  = bridge
+        @content = content
+        @spec    = spec
+
+        for entry in @spec.callables
+          @[entry] = (args...) =>
+            @bridge.request "moduleRun", @spec.moduleName, args
+
+        return @
 
 
 class ModuleLoader
@@ -257,13 +275,14 @@ class ModuleLoader
 
     @console.debug "ModuleLoader(#{pkg.name}) load module #{moduleName} (#{suffix})"
 
-    xikijData =
+    xikijData = new XikijModule {
       sourceFile: sourceFile
       fileName:   sourceFile
       moduleName: moduleName
       menuName:   name
       menuType:   suffix
       package:    pkg
+    }
 
     # moduleDir = path.dirname(moduleName)
     # if not moduleDir of pkg.modules

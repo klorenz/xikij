@@ -14,9 +14,8 @@ Q               = require "q"
 fs              = require "fs"
 {Context}       = require "./context"
 cli             = require "./xikij-cli"
-{getLogger}     = require "./logger"
-
-log = getLogger("xikij", level: "debug")
+getLogger       = require "./logger"
+log             = getLogger("xikij", level: "debug")
 
 issubclass = (B, A) -> B.prototype instanceof A
 
@@ -55,6 +54,8 @@ class Xikij
     @event    = new EventEmitter()
 
     @Q = Q
+
+    @getLogger = getLogger
 
     @_contexts = []
     @_context  = {}

@@ -27,7 +27,6 @@ module.exports = (Interface, xikij) ->
 
     # respond gets a Response object, which contains a type and a stream
     request: (opts, _respond) ->
-      debugger
       if typeof opts is "string"
         opts = path: opts
 
