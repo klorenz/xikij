@@ -21,5 +21,5 @@ bridge_test = (suffix) ->
           .then (isdir) => expect(isdir).toBe false
 
 
-fdescribe "Xikij Bridge", ->
+describe "Xikij Bridge", ->
   describe "python", bridge_test("py")

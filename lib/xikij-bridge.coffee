@@ -56,6 +56,9 @@ class XikijBridge
 
     @console = (require "./logger")('xikij.Bridge', "(#{@cmd})")
 
+    # a repository to hold contexts by handles from current requests
+    @contexts = {}
+
     try
       @bridge = child_process.spawn @cmd[0], @cmd[1..]
 
@@ -160,7 +163,15 @@ class XikijBridge
     @request(null, "exit")
 
   write: (req) ->
-    @bridge.stdin.write JSON.stringify(req)+"\n"
+    @bridge.stdin.write JSON.stringify(req, (k,v) ->
+      if v
+        if v.toJSON?
+          v.toJSON()
+        else
+          v
+      else
+        v
+      )+"\n"
 
   request: (context, cmd, args...) ->
 

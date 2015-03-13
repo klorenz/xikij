@@ -37,6 +37,9 @@ class Request
     unless @nodePaths
       @nodePaths = {}
 
+  toJSON: ->
+    return {__class: "Request", @body, @nodePaths, @args, @action, @input}
+
   selectContext: (ctx, reqPath, status) ->
     {contextsDone, promises, deferred} = status
     @console.debug "selectContext()", ctx, reqPath, status

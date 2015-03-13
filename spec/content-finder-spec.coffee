@@ -17,7 +17,8 @@ describe "content-finder", ->
     """
 
   it "can find content in a xikij file", ->
-    xikij = new Xikij()
+    debugger
+    xikij = Xikij()
     content = null
 
     waitsForPromise ->
@@ -32,7 +33,7 @@ describe "content-finder", ->
       """
 
   it "can find content in more complex things", ->
-    xikij = new Xikij()
+    xikij = Xikij()
     content = null
 
     waitsForPromise ->
@@ -46,7 +47,7 @@ describe "content-finder", ->
         """
 
   it "can find content in more complex things 2", ->
-    xikij = new Xikij()
+    xikij = Xikij()
     content = null
 
     waitsForPromise ->

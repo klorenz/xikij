@@ -12,7 +12,7 @@ describe "extensions", ->
   xikij   = null
 
   beforeEach ->
-    xikij = new Xikij packagesPath: false, initialization: false
+    xikij = Xikij packagesPath: false, initialization: false
 
     RequestContext = RequestContextClass(xikij.Context, {
       filePath:    __filename
@@ -79,7 +79,7 @@ describe "extensions", ->
 
   describe "ModuleLoader", ->
     it "can load a module", ->
-      xikij = new Xikij packagesPath: false, initialization: false
+      xikij = Xikij packagesPath: false, initialization: false
       pkg =
         dir: "#{__dirname}/fixture/packages/xikij-executable"
         name: "xikij-executable"

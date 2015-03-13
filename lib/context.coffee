@@ -8,113 +8,118 @@ class RejectPath extends Error
 hasOwnMethod = (x, method) ->
   x.hasOwnProperty(method) or x.__proto__.hasOwnProperty(method)
 
-class Context
+# factory function for Context Class
+# returns Context class
+Context = (context) ->
 
-  NAME: null
-  MENU: null
+  class Context
 
-  constructor: (@context) ->
+    NAME: null
+    MENU: null
 
-    if typeof @PATTERN is "string"
-      @PATTERN = new Regexp @PATTERN
+    constructor: (@context) ->
 
-    @nodePath = null
-    @path = null
-    @subcontext = null
+      if typeof @PATTERN is "string"
+        @PATTERN = new Regexp @PATTERN
 
-    @weight = 1
+      @nodePath = null
+      @path = null
+      @subcontext = null
 
-    @dispatchedContexts = []
+      @weight = 1
 
-    #@on "open", (xikiRequest) => @open(xikiRequest)
-    #@on "open", (xikiRequest) => @open(xikiRequest)
+      @dispatchedContexts = []
 
-  CONTEXT: null
-  PATTERN: null
+      #@on "open", (xikiRequest) => @open(xikiRequest)
+      #@on "open", (xikiRequest) => @open(xikiRequest)
 
-  promisedDispatch: (context, method, args) ->
+    CONTEXT: null
+    PATTERN: null
 
-    if hasOwnMethod context, "getSubject"
-      promised = context.getSubject()
-    else
-      promised = Q(null)
-
-    promised.then (subject) =>
-
-      if subject?
-        if hasOwnMethod subject, method
-          return subject[method].apply @, args
-
-      if hasOwnMethod context, method
-        return context[method].apply @, args
-
-      return @promisedDispatch context.context, method, args
-
-
-  dispatch: (method, args) ->
-    context = @context
-    while context
+    promisedDispatch: (context, method, args) ->
 
       if hasOwnMethod context, "getSubject"
-        return @promisedDispatch context, method, args
+        promised = context.getSubject()
+      else
+        promised = Q(null)
 
-      if hasOwnMethod context, method
-        return context[method].apply @, args
+      promised.then (subject) =>
 
-      context = context.context
+        if subject?
+          if hasOwnMethod subject, method
+            return subject[method].apply @, args
 
-    #####
+        if hasOwnMethod context, method
+          return context[method].apply @, args
 
-  self: (attr, args...) ->
-    context = @
-
-    found = 0
-    while context
-      if context.constructor.name == attr
-        result = context
-        found = 1
-        break
-
-      if context.hasOwnProperty(attr)
-        result = context[attr]
-        found = 1
-        break
-
-      if context.__proto__.hasOwnProperty(attr)
-        result = context[attr]
-        found = 1
-        break
-
-      context = context.context
-
-    if found
-      if result instanceof Function
-        if args.length
-          return result.apply context, args
-        else
-          return (args...) -> result.apply context, args
-      return result
-
-    return undefined
+        return @promisedDispatch context.context, method, args
 
 
-  does: (request, requestPath) ->
-    if @PATTERN?
-      m = @PATTERN.exec requestPath.toPath()
-      if m
-        @mob = m
-        return true
+    dispatch: (method, args) ->
+      context = @context
+      while context
 
-    return false unless requestPath
+        if hasOwnMethod context, "getSubject"
+          return @promisedDispatch context, method, args
 
-    # mob contains match object from @PATTERN
+        if hasOwnMethod context, method
+          return context[method].apply @, args
 
-  reject: (s)->
-    throw new RejectPath(s)
+        context = context.context
 
-  rootMenuItems: -> Q.fcall -> return []
+      #####
 
-  # called to get context for this context
-  getContext: -> this
+    self: (attr, args...) ->
+      context = @
+
+      found = 0
+      while context
+        if context.constructor.name == attr
+          result = context
+          found = 1
+          break
+
+        if context.hasOwnProperty(attr)
+          result = context[attr]
+          found = 1
+          break
+
+        if context.__proto__.hasOwnProperty(attr)
+          result = context[attr]
+          found = 1
+          break
+
+        context = context.context
+
+      if found
+        if result instanceof Function
+          if args.length
+            return result.apply context, args
+          else
+            return (args...) -> result.apply context, args
+        return result
+
+      return undefined
+
+
+    does: (request, requestPath) ->
+      if @PATTERN?
+        m = @PATTERN.exec requestPath.toPath()
+        if m
+          @mob = m
+          return true
+
+      return false unless requestPath
+
+      # mob contains match object from @PATTERN
+
+    reject: (s)->
+      throw new RejectPath(s)
+
+    rootMenuItems: -> Q.fcall -> return []
+
+    # called to get context for this context
+    getContext: -> this
+
 
 module.exports = {Context, RejectPath}

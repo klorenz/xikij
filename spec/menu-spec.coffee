@@ -6,21 +6,20 @@ fs      = require 'fs'
 
 describe "Menu", ->
   describe "...written in python", ->
-    fit "can access xikij API", ->
-      xikij = new Xikij packagesPath: "#{__dirname}/fixture/packages"
+    it "can implement menu API", ->
+      xikij = Xikij packagesPath: "#{__dirname}/fixture/packages"
 
       waitsForPromise ->
         xikij.initialized.then () =>
-          debugger
           xikij.packages.getModule("py-hostname")
 
       waitsForPromise ->
-        xikij.request("py-hostname").then (hostname) =>
-          expect(hostname).toEqual os.hostname()
+        xikij.request("py-hostname").then (response) =>
+          expect(response.data).toEqual os.hostname()
 
   describe "...any executable", ->
     it "can provide help", ->
-      xikij = new Xikij packagesPath: "#{__dirname}/fixture/packages"
+      xikij = Xikij packagesPath: "#{__dirname}/fixture/packages"
 
       waitsForPromise ->
         xikij.request("foo").then (x) =>
@@ -42,14 +41,12 @@ describe "Menu", ->
 
     beforeEach ->
       tempdir = path.join (os.tmpdir or os.tmpDir)(), uuid.v4()
-      xikij = new Xikij userPackagesDir: tempdir
+      xikij = Xikij userPackagesDir: tempdir
 
       updated = false
 
       xikij.event.on "package:module-updated", (name, module)->
-        console.log "package:module-updated", name, module
         if module.menuName == "amazon" and module.package.name != "xikij"
-          debugger
           updated = true
 
       waitsForPromise ->

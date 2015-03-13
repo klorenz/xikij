@@ -34,7 +34,7 @@ describe "Xikij", ->
   it "should load packages", ->
     loaded_event = false
 
-    xikij = new Xikij packagesPath: false
+    xikij = Xikij packagesPath: false
     xikij.event.on "loaded", ->
       loaded_event = true
     xikij.initialize()
@@ -55,7 +55,7 @@ describe "Xikij", ->
   #   initializedHook = jasmine.createSpy("initializedHook")
   #   initialized = false
   #
-  #   xiki = new Xikij()
+  #   xiki = Xikij()
   #
   #   # xiki.packages.on "loaded", ->
   #   #   loadedHook()
@@ -76,7 +76,7 @@ describe "Xikij", ->
   describe "when xiki object has been created", ->
 
     it "should provide modules", ->
-      xikij = new Xikij packagesPath: false
+      xikij = Xikij packagesPath: false
       xikij.initialize()
 
       waitsForPromise ->
@@ -89,7 +89,7 @@ describe "Xikij", ->
 
 
     it "should have loaded basic package", ->
-      xiki = new Xikij packagesPath: false
+      xiki = Xikij packagesPath: false
 
       xiki.packages.loaded().then ->
 
@@ -132,7 +132,7 @@ describe "Xikij", ->
       xiki.initialize()
 
     it "can load other packages", ->
-      xikij = new Xikij packagesPath: "#{__dirname}/fixture/packages"
+      xikij = Xikij packagesPath: "#{__dirname}/fixture/packages"
 
       waitsForPromise ->
         xikij.initialized.then ->
@@ -155,7 +155,7 @@ describe "Xikij", ->
     describe "when passing 'path'", ->
 
       doPromisedRequest = (request, callback) ->
-        xikij = new Xikij packagesPath: false
+        xikij = Xikij packagesPath: false
         waitsForPromise ->
           promise = xikij.request(request)
           promise
@@ -163,7 +163,7 @@ describe "Xikij", ->
             .fail (error) -> throw error
 
       it "should handle the path with callback", ->
-        xikij = new Xikij packagesPath: false
+        xikij = Xikij packagesPath: false
         requestResponded = false
         os = require "os"
 
@@ -175,7 +175,7 @@ describe "Xikij", ->
         waitsFor (-> requestResponded), "xiki command has responded", 1000
 
       it "should handle an empty path", ->
-        xikij = new Xikij packagesPath: false
+        xikij = Xikij packagesPath: false
         requestResponded = false
         os = require "os"
 

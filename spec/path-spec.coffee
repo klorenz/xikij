@@ -17,7 +17,7 @@ describe "Xikij Path", ->
     xikijDoc = null
 
     beforeEach ->
-      xikij = new Xikij()
+      xikij = Xikij()
       xikijDoc = """
       - foo
         - bar

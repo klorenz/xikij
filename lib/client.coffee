@@ -10,7 +10,7 @@ class XikijClient
   _request: (args...) ->
     unless @xikij
       {Xikij} = require "./xikij"
-      @xikij = new Xikij @opts
+      @xikij = Xikij @opts
 
     @xikij.request args...
 
@@ -44,6 +44,8 @@ class XikijClient
 
     result = new ResultProvider
 
+  setLogLevel: (level) ->
+    @xikij.setLogLevel(level)
 
   request: ({path, body, args, action}, respond) ->
     @_request {path, body, args, action}, respond

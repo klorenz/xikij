@@ -16,12 +16,6 @@ executableLoader = require "./extensions/executable"
 
 getLogger = require "./logger"
 
-class BridgedModule
-  constructor: (@bridge, @spec) ->
-    for entry in @spec.callables
-      @[entry] = (args...) =>
-        @bridge.request "moduleRun", @spec.moduleName, args
-
 class XikijModule
   constructor: ({@fileName, @moduleName, @settingsName, @package, @platform, @menuType, @menuName, @sourceFile}) ->
 
@@ -38,9 +32,12 @@ class XikijModule
         @content = content
         @spec    = spec
 
-        for entry in @spec.callables
-          @[entry] = (args...) =>
-            @bridge.request "moduleRun", @spec.moduleName, args
+        @spec.callables.forEach (entry) =>
+          @[entry] = (request) =>
+            @bridge.request this, "moduleRun", @spec.moduleName, entry, request
+
+        #for entry in @spec.callables
+            #request.toJSON()
 
         return @
 

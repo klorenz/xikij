@@ -25,178 +25,185 @@ getuser = (req) ->
 
 {PackageManager} = require "./package-manager"
 
-class Xikij
+# factory function
+Xikij = (opts) ->
 
-  configDefaults:
-    xikij: {
-      userDir:             util.getUserHome()
-      xikijUserDirName:    '.xikij'
-      xikijProjectDirName: '.xikij'
-    }
+  class Xikij
 
-  constructor: (opts) ->
-    opts = opts or {}
+    configDefaults:
+      xikij: {
+        userDir:             util.getUserHome()
+        xikijUserDirName:    '.xikij'
+        xikijProjectDirName: '.xikij'
+      }
 
-    Interface  = require './interface'
-    @Interface = (require './interfaces')(new Interface(this))
-    @Interface.mixDefaultsInto this
+    constructor: (opts) ->
+      opts = opts or {}
 
-    @Action = Action
+      Interface  = require './interface'
+      @Interface = (require './interfaces')(new Interface(this))
+      @Interface.mixDefaultsInto this
+      @Action    = Action
 
-    @Context = @Interface.mixInto Context
+      @Context   = @Interface.mixInto Context()
 
-    # need these Context specific methods, to be fully context compatible
-    # beeing a context does not work, because of mixing defaults into this
-    # and interface definitions into Context
-    @dispatch = Context::dispatch
-    @self     = Context::self
+      # need these Context specific methods, to be fully context compatible
+      # beeing a context does not work, because of mixing defaults into this
+      # and interface definitions into Context
+      @dispatch = @Context::dispatch
+      @self     = @Context::self
 
-    @event    = new EventEmitter()
+      @event    = new EventEmitter()
 
-    @Q = Q
+      @Q = Q
 
-    @getLogger = getLogger
+      @getLogger = getLogger
 
-    @_contexts = []
-    @_context  = {}
+      @_contexts = []
+      @_context  = {}
 
-    @_bridges  = {}
-    @_bridges['py'] = new XikijBridge(suffix: "py")
-    @Bridge = XikijBridge
+      @_bridges  = {}
+      @_bridges['py'] = new XikijBridge(suffix: "py")
+      @Bridge = XikijBridge
 
-    @contentFinder = new ContentFinder this
-    @util = util
-    @Path = Path
+      @contentFinder = new ContentFinder this
+      @util = util
+      @Path = Path
 
-    @settings = {}
+      @settings = {}
 
-    # first initialize packages
-    @packages   = new PackageManager this
-    @moduleLoader = new ModuleLoader this
-#    @extensions = new XikiExtensions this
+      # first initialize packages
+      @packages   = new PackageManager this
+      @moduleLoader = new ModuleLoader this
+  #    @extensions = new XikiExtensions this
 
-    @opts = opts
+      @opts = opts
 
-    @_initStarted   = false
+      @_initStarted   = false
 
-    if not opts.initialization?
-      opts.initialization = true
+      if not opts.initialization?
+        opts.initialization = true
 
-    if not opts.initialization
-      @initialized = Q(true)
-    else
-      @initialization = Q.defer()
-      @initialized    = @initialization.promise
-      @initialize()
+      if not opts.initialization
+        @initialized = Q(true)
+      else
+        @initialization = Q.defer()
+        @initialized    = @initialization.promise
+        @initialize()
 
-    # initialized method has been triggered
-#    @_initialized = false
-#    @_packages_loaded = false
-  getBridge: (suffix) ->
-    if suffix of @_bridges
-      @_bridges[suffix]
-    else
-      null
+      # initialized method has been triggered
+  #    @_initialized = false
+  #    @_packages_loaded = false
+    getBridge: (suffix) ->
+      if suffix of @_bridges
+        @_bridges[suffix]
+      else
+        null
 
-  shutdown: ->
-    @event.emit "shutdown", @
+    setLogLevel: (level) ->
+      @getLogger().setLogLevel(level)
 
-  on: (event, callback) ->
-    log.debug "event", event
+    shutdown: ->
+      @event.emit "shutdown", @
 
-  mixInterfacesInto: (target) ->
-    @Interface.mixInto target
+    on: (event, callback) ->
+      log.debug "event", event
 
-  initialize: (opts) ->
-    return @initialized if @_initStarted
+    mixInterfacesInto: (target) ->
+      @Interface.mixInto target
 
-    @_initStarted = true
+    initialize: (opts) ->
+      return @initialized if @_initStarted
 
-    opts = opts or {}
-    _.extend @opts, opts
+      @_initStarted = true
 
-    log.debug "opts: ", @opts
+      opts = opts or {}
+      _.extend @opts, opts
+
+      log.debug "opts: ", @opts
 
 
-    userDir  = @opts.userDir  ? util.getUserHome()
-    userBase = @opts.userBase ? ".xikij"
+      userDir  = @opts.userDir  ? util.getUserHome()
+      userBase = @opts.userBase ? ".xikij"
 
-    @packages.add path.normalize path.join __dirname, ".."
+      @packages.add path.normalize path.join __dirname, ".."
 
-    if @opts.userPackagesDir
-      @userPackagesDir = @opts.userPackagesDir
-    else
-      @userPackagesDir = path.resolve userDir, userBase
+      if @opts.userPackagesDir
+        @userPackagesDir = @opts.userPackagesDir
+      else
+        @userPackagesDir = path.resolve userDir, userBase
 
-    log.debug "userPackagesDir", @userPackagesDir
+      log.debug "userPackagesDir", @userPackagesDir
 
-    #@userPackagesDir = path.resolve userDir, userBase
+      #@userPackagesDir = path.resolve userDir, userBase
 
-    # if opts.packages.Path is explicitely false, do not use path
-    # else use default path
-    if @opts.packagesPath is false
-      packagesPath = []
+      # if opts.packages.Path is explicitely false, do not use path
+      # else use default path
+      if @opts.packagesPath is false
+        packagesPath = []
 
-    else unless @opts.packagesPath?
-      packagesPath = []
+      else unless @opts.packagesPath?
+        packagesPath = []
 
-      if fs.existsSync @userPackagesDir
+        if fs.existsSync @userPackagesDir
 
-        node_modules_dir = path.join @userPackagesDir, "node_modules"
-        if fs.existsSync node_modules_dir
-          packagesPath.push node_modules_dir
+          node_modules_dir = path.join @userPackagesDir, "node_modules"
+          if fs.existsSync node_modules_dir
+            packagesPath.push node_modules_dir
 
-        user_modules_dir = path.join @userPackagesDir, "user_modules"
-        if fs.existsSync user_modules_dir
-          packagesPath.push user_modules_dir
+          user_modules_dir = path.join @userPackagesDir, "user_modules"
+          if fs.existsSync user_modules_dir
+            packagesPath.push user_modules_dir
 
-        # for dir in fs.readdirSync @userPackagesDir
-        #   continue if dir == "node_modules"
-        #   continue if dir == "user_modules"
-        #
-        #   p = path.resolve @userPackagesDir, dir
-        #   stat = fs.statSync p
-        #   if stat.isDirectory()
-        #     packagesPath.push p
-    else
-      packagesPath = @opts.packagesPath
+          # for dir in fs.readdirSync @userPackagesDir
+          #   continue if dir == "node_modules"
+          #   continue if dir == "user_modules"
+          #
+          #   p = path.resolve @userPackagesDir, dir
+          #   stat = fs.statSync p
+          #   if stat.isDirectory()
+          #     packagesPath.push p
+      else
+        packagesPath = @opts.packagesPath
 
-    if typeof packagesPath is "string"
-      packagesPath = [ packagesPath ]
+      if typeof packagesPath is "string"
+        packagesPath = [ packagesPath ]
 
-    for p in packagesPath
-      p = path.normalize(p)
+      for p in packagesPath
+        p = path.normalize(p)
 
-      log.debug "loading packages from #{p}"
+        log.debug "loading packages from #{p}"
 
-      for e in fs.readdirSync p
-        _path = path.join(p, e)
-        stat = fs.statSync _path
-        if stat.isDirectory()
-          log.debug "add", _path
-          @packages.add _path
+        for e in fs.readdirSync p
+          _path = path.join(p, e)
+          stat = fs.statSync _path
+          if stat.isDirectory()
+            log.debug "add", _path
+            @packages.add _path
 
-    @packages.loaded()
-      .then =>
-        @initialization.resolve(true)
-      .fail (err) =>
-        log.debug err.stack
-        @initialization.resolve(false)
+      @packages.loaded()
+        .then =>
+          @initialization.resolve(true)
+        .fail (err) =>
+          log.debug err.stack
+          @initialization.resolve(false)
 
-  # GET [action], path, [args]
-  GET: (action, path, args=null) ->
-    unless args?
-      unless path
-        path = action
-        action = "expand"
-      args = {}
+    # GET [action], path, [args]
+    GET: (action, path, args=null) ->
+      unless args?
+        unless path
+          path = action
+          action = "expand"
+        args = {}
 
-    @request {path, action, args}
+      @request {path, action, args}
 
-  # TODO make ctx reloadable/overridable
+    # TODO make ctx reloadable/overridable
 
-  getSearchPath: (type) ->
-    @packages.each (pkg) -> path.join pkg.path, type
+    getSearchPath: (type) ->
+      @packages.each (pkg) -> path.join pkg.path, type
+
+  new Xikij opts
 
 module.exports =
   # middleware?

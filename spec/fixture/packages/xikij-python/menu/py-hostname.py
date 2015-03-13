@@ -2,6 +2,6 @@
 Print hostname of machine running xikij
 """
 
-def menu():
+def run():
   import socket
-  return socket.gethostbyname()
+  return socket.gethostname()

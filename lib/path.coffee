@@ -72,6 +72,9 @@ class PathFragment
     else
       @name
 
+  toJSON: ->
+    return [@name, @position]
+
 class Path
   constructor: (@nodePath) ->
     @nodePath = [] unless @nodePath
@@ -114,6 +117,9 @@ class Path
       splitPath(string)
     else
       (x.name for x in @nodePath.slice())
+
+  toJSON: ->
+    return @nodePath
 
   unshift: (thing)->
     if thing instanceof Array

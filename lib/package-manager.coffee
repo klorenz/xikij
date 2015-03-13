@@ -20,7 +20,6 @@ class Package
     @settings = {}
     @errors = null
 
-    debugger
     @log = getLogger("xikij.Package", prefix: "(#{@name})", level: "debug")
 
   isUserPackage: () ->
