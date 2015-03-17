@@ -30,9 +30,7 @@ module.exports = (xikij) ->
   _ = require "underscore"
 
   DEBUG = true
-
-  debug = (args...) ->
-    console.debug "CTX:Directory:", args... if DEBUG
+  console = xikij.getLogger "xikij.context.directory"
 
   class @Directory extends xikij.Context
     PS1 = "  $ "
@@ -49,7 +47,7 @@ module.exports = (xikij) ->
 
       @shellExpand reqPath.toPath()
         .then (rp) =>
-          debug "rp", rp
+          console.debug "rp", rp
           menuPath = rp
 
           @_fileName = null
@@ -58,11 +56,11 @@ module.exports = (xikij) ->
           p[...2].join("/")
 
         .then (fsRoot) =>
-          debug "fsRoot", fsRoot
+          console.debug "fsRoot", fsRoot
           @isAbs fsRoot
 
         .then (isabs) =>
-          debug "isabs", isabs
+          console.debug "isabs", isabs
           if isabs
             menuPath
           else if p[0] in [".", ".."]
@@ -76,11 +74,11 @@ module.exports = (xikij) ->
             @reject("directory")
 
         .then (cwd) =>
-          debug "cwd", cwd
+          console.debug "cwd", cwd
           @reject("directory") unless cwd
 
           unless _.last(request.nodePaths) is reqPath
-            debug "is intermediate"
+            console.debug "is intermediate"
             # intermediate path, which must have an existing directory
             # part, which can serve as cwd
             @isDirectory(cwd).then (isdir) =>
@@ -93,7 +91,7 @@ module.exports = (xikij) ->
               else
                 @_yes(cwd, true)
           else
-            debug "is last"
+            console.debug "is last"
             if menuPath.match /\/$/
               @_yes(cwd, true)
             else
@@ -112,7 +110,7 @@ module.exports = (xikij) ->
         @_directoryCwd = filePath
       else
         @_directoryCwd = @_directoryDirName
-      debug "yes:", filePath
+      console.debug "yes:", filePath
       yes
 
     expanded: (request) ->

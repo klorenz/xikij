@@ -16,8 +16,8 @@ module.exports = (Interface, xikij) ->
 
       @getXikijUserDir().then (userdir) =>
 
-        if module?.sourceFile
-          menupath = "#{userdir}/menu/#{module.menuName}.#{module.menuType}"
+        if module?.fileName
+          menupath = "#{userdir}/menu/#{module.name}.#{module.menuType}"
         else if not result?
           menupath = "#{userdir}/menu/#{menu}"
 

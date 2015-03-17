@@ -17,7 +17,6 @@ describe "content-finder", ->
     """
 
   it "can find content in a xikij file", ->
-    debugger
     xikij = Xikij()
     content = null
 

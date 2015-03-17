@@ -13,11 +13,12 @@ settingsParser = require "./settings-parser"
 pythonLoader     = require "./extensions/python"
 coffeeLoader     = require "./extensions/coffeescript"
 executableLoader = require "./extensions/executable"
+textLoader       = require "./extensions/text"
 
 getLogger = require "./logger"
 
 class XikijModule
-  constructor: ({@fileName, @moduleName, @settingsName, @package, @platform, @menuType, @menuName, @sourceFile}) ->
+  constructor: ({@fileName, @moduleName, @package, @platform, @menuType, @name}) ->
 
   bridged: (xikij, bridge, content) ->
     info = clone(@)
@@ -27,7 +28,6 @@ class XikijModule
 
     bridge.request(xikij, "registerModule", info, content)
       .then (spec) =>
-        debugger
         @bridge  = bridge
         @content = content
         @spec    = spec
@@ -35,9 +35,6 @@ class XikijModule
         @spec.callables.forEach (entry) =>
           @[entry] = (request) =>
             @bridge.request this, "moduleRun", @spec.moduleName, entry, request
-
-        #for entry in @spec.callables
-            #request.toJSON()
 
         return @
 
@@ -78,6 +75,7 @@ class ModuleLoader
     @registerLoader coffeeLoader
     @registerLoader pythonLoader
     @registerLoader executableLoader
+    @registerLoader textLoader
 
     @console = getLogger("xikij.ModuleLoader")
 
@@ -228,11 +226,12 @@ class ModuleLoader
       platform = process.platform
 
     xikijData = new XikijModule {
-      fileName:     sourceFile
-      moduleName:   moduleName
-      settingsName: name
-      package:      pkg
-      platform:     platform
+      fileName:   sourceFile
+      moduleName: moduleName
+      name:       name
+      type:       'settings'
+      package:    pkg
+      platform:   platform
     }
 
     return @xikij.readFile(sourceFile).then (content) =>
@@ -273,11 +272,12 @@ class ModuleLoader
     @console.debug "ModuleLoader(#{pkg.name}) load module #{moduleName} (#{suffix})"
 
     xikijData = new XikijModule {
-      sourceFile: sourceFile
+      #sourceFile: sourceFile
       fileName:   sourceFile
       moduleName: moduleName
-      menuName:   name
+      name:       name
       menuType:   suffix
+      type:       'menu'
       package:    pkg
     }
 

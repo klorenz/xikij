@@ -86,5 +86,14 @@ Need a keyboard shortcut to remove a line. ``ctrl+entf`` ?
 ## Quick Open
 
 Need a list of all titles to open a menu entry quickly.
-Maybe from completion? 
+Maybe from completion?
 Autocomplete-plus extension?
+
+## Newline after entry on collapse
+
+If an entry is collapsed and next line is indented less than entry, insert an
+empty line after collapsed entry.
+
+## on running a command put the cursor right after the output mark
+
+... then cursor scrolls with output :)

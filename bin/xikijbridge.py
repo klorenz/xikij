@@ -202,20 +202,20 @@ class Shell:
         import imp
         modName    = data['moduleName'].replace('-', '_').replace("/", ".")
         m          = imp.new_module(modName)
-        m.__file__ = data['sourceFile']
+        m.__file__ = data['fileName']
         m.os       = os
         m.re       = re
         m.sys      = sys
         #m.xikij        = Xikij
 
-        code = compile(content, filename=data['sourceFile'], mode="exec")
+        code = compile(content, filename=data['fileName'], mode="exec")
         exec_code(code, m.__dict__)
         modules[data['moduleName']] = m
 
         result = data.copy()
         result.update({'callables': [], 'contexts': []})
 
-        #import rpdb2 ; rpdb2.start_embedded_debugger('foo')
+        #import rpdb2 ; rpdb2.start_embedded_('foo')
 
         for entry in dir(m):
             if entry in ('__file__', 'os', 're', 'sys', 'xikij'): continue

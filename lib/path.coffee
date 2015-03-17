@@ -1,5 +1,6 @@
 {getIndent, startsWith, endsWith, strip, StringReader} = require "./util"
 {last, keys} = require "underscore"
+{Node} = require "./node"
 stream = require "stream"
 console = (require "./logger")("xikij.path")
 
@@ -172,6 +173,8 @@ class Path
       keysOnly = false
 
     for frag,i in @nodePath
+      console.debug "frag: #{frag}, i: #{i}"
+
       if obj instanceof Array
         _equals = 0
         _found = no
@@ -184,20 +187,29 @@ class Path
             else
               _equals++
 
+          if e instanceof Node
+            if e.label == frag.name
+              if _equals == frag.position
+                obj = e.content
+                _found = yes
+              else
+                _equals++
+
         break unless _found
         continue
 
       key = transform frag.name
 
+      console.debug "key: #{key}, obj", obj
+
       break unless key of obj
+
+      break unless found obj[key], @, i
 
       obj = obj[key]
 
-      if have = found obj, @, i
-        return have
-
       if obj instanceof Function
-        return callfunc obj, @[i+1..]
+        obj = callfunc obj, @[i+1..]
 
     if obj is original and @nodePath.length > 0
       throw new Error("path not in object")

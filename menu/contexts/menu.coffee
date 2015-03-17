@@ -26,19 +26,19 @@ module.exports = (xikij) ->
       # in future rather return object
       # tree = {}
       # for m in xikij.packages.modules()
-      #   insertToTree.call tree, Path.split(m.menuName), m
+      #   insertToTree.call tree, Path.split(m.name), m
       #
       # Q(tree)
 
       result = []
 
       for m in xikij.packages.modules()
-        r = m.menuName.replace(/\/.*/, '')
+        r = m.name.replace(/\/.*/, '')
         result.push r unless r in result
       Q(result)
 
     isMenuItem: ->
-      return @menuItem.menuName?
+      return @menuItem.name?
 
     menuExpand: (req) ->
       if @menuItem.expanded
@@ -77,16 +77,17 @@ module.exports = (xikij) ->
 
             if o.moduleName?
               @weight   = reqPath[..i].toPath().length
-              @menuName = o.menuName
+              @name = o.name
               @menuItem = o
               @menuPath = p[i+1..]
-              return true
             else
               # directory with entries
               @weight   = reqPath[..i].toPath().length
-              @menuName = p.toString()
+              @name = p.toString()
               @menuItem = o
               @menuPath = p[i+1..]
+
+            o
           )
         return yes
 
@@ -97,7 +98,7 @@ module.exports = (xikij) ->
 
       #return false unless reqPath
       @path = reqPath
-      @menuName = rp = reqPath.toPath().replace(/\/$/, '').replace(/[:*?]\//, '/').replace(/:$/, '')
+      @name = rp = reqPath.toPath().replace(/\/$/, '').replace(/[:*?]\//, '/').replace(/:$/, '')
       @menuPath = null
       @menuDir  = null
 
@@ -107,7 +108,7 @@ module.exports = (xikij) ->
       for m in xikij.packages.modules()
         console.log "mod", m
 
-        mn = m.menuName
+        mn = m.name
 
         minlen = Math.min(mn.length, rp.length)
         continue if minlen < max_minlen
@@ -164,7 +165,7 @@ module.exports = (xikij) ->
                 else
                   return null
 
-            return "%{method} is no method of #{@menuName}"
+            return "%{method} is no method of #{@name}"
 
         else
           if @module.doc instanceof Function
@@ -176,7 +177,7 @@ module.exports = (xikij) ->
       @
       path     = @self "menuPath"
       menuItem = @self "menuItem"
-      menuName = @self "menuName"
+      name = @self "name"
 
       console.debug "menu expanded menuItem", menuItem
       console.debug "menu expanded path", path
@@ -187,9 +188,9 @@ module.exports = (xikij) ->
 
           return path.selectFromObject menuItem,
             transform: (frag) -> frag.replace /^\./, ''
-            caller:    (func, path) -> func request.clone {path, menuName}
+            caller:    (func, path) -> func request.clone {path, name}
 
-      req = request.clone {path, menuName}
+      req = request.clone {path, name}
 
       # if @menuItem.expanded
       #   return @menuItem.expand req
@@ -209,7 +210,7 @@ module.exports = (xikij) ->
       menuItem = @self "menuItem"
       console.debug "getSubject", menuItem
 
-      if menuItem.menuName
+      if menuItem.name
         if menuItem.init
           Q.when(menuItem.init()).then (value) => value ? menuItem
         else

@@ -5,7 +5,8 @@ module.exports = (xikij) ->
   stream = require "stream"
 
   class @Execution extends xikij.Context
-    PS1 = "$ "
+    PS1: "$ "
+    #PS2 = "> "
 
     does: (request, reqPath) ->
       rp = reqPath.toPath escape: false

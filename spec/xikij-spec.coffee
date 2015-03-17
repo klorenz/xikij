@@ -151,6 +151,13 @@ describe "Xikij", ->
 
       xikij.initialize()
 
+  fdescribe "xikij context", ->
+    it "can list context prompts", ->
+      xikij = Xikij()
+      waitsForPromise ->
+        Xikij().getPrompts().then (prompts) ->
+          expect(prompts).toEqual ['$ ']
+
   describe "when you request a xiki response", ->
     describe "when passing 'path'", ->
 
@@ -270,7 +277,7 @@ describe "Xikij", ->
           body: "./#{path.basename(__filename)}\n  @filepath",
           args: {filePath: __filename}
         }, (response) ->
-          debugger
+          
           expect(response.data).toBe __filename
 
       it "can handle menus in directory ../", ->

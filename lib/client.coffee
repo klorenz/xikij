@@ -5,12 +5,14 @@ xikij_next_response_id = 1
 class XikijClient
 
   constructor: (@opts) ->
+    {Xikij} = require "./xikij"
+    @xikij = Xikij @opts
 
   # implement _request in other client implementations
   _request: (args...) ->
-    unless @xikij
-      {Xikij} = require "./xikij"
-      @xikij = Xikij @opts
+    # unless @xikij
+    #   {Xikij} = require "./xikij"
+    #   @xikij = Xikij @opts
 
     @xikij.request args...
 
@@ -49,5 +51,9 @@ class XikijClient
 
   request: ({path, body, args, action}, respond) ->
     @_request {path, body, args, action}, respond
+
+  # return a list of possible prompts
+  getPrompts: -> @xikij.getPrompts()
+
 
 module.exports = {XikijClient}

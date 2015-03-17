@@ -11,9 +11,6 @@ This is not yet a program running on its own.  It is a library still.
 ```
 /home/kiwi
   $ ls
-
-root@havanna:/var/deploy
-  $ ls
 ```
 
 TODO

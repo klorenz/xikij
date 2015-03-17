@@ -84,7 +84,7 @@ module.exports = (Interface) ->
       Q.allSettled(promises).then ->
         console.log "path", process.env['PATH']
         console.log "spawn", args[0], args[1..], opts
-        debugger
+        
         if fs.existsSync(args[0])
           console.log "exists", args[0]
         else

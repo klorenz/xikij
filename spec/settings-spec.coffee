@@ -2,7 +2,7 @@
 
 describe "settings", ->
   it "can store and retrieve settings", ->
-    debugger
+    
     settings = new Settings
     settings.update
       moduleName: "foo/bar"

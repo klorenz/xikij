@@ -103,11 +103,11 @@ class PackageManager
       @log.debug "package:module-updated", name, module
 
       data = {}
-      data["#{module.menuName}.#{module.menuType}"] = module
+      data["#{module.name}.#{module.menuType}"] = module
       makeTree data, @_modules_suff
 
       data = {}
-      data["#{module.menuName}"] = module
+      data["#{module.name}"] = module
       makeTree data, @_modules
 
     @log = getLogger("xikij.PackageManager")

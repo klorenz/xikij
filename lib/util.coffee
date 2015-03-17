@@ -122,7 +122,7 @@ class StringReader extends stream.Readable
     stream
 
 class Indenter extends stream.Transform
-  constructor: ({@indent}) ->
+  constructor: ({@indent, @firstIndent}) ->
     super()
     @firstLine = true
     unless @indent
@@ -131,7 +131,7 @@ class Indenter extends stream.Transform
   _transform: (chunk, encoding, done) ->
     if @firstLine
       if @indent
-        @push @indent
+        @push @firstIndent
       @firstLine = false
 
     s = chunk.toString()
@@ -140,15 +140,16 @@ class Indenter extends stream.Transform
     @push s.replace /\n(?!$)/g, "\n#{@indent}"
     done()
 
-indented = (thing, indent) ->
+indented = (thing, indent, firstIndent) ->
+  firstIndent = firstIndent ? indent
   if thing instanceof stream.Readable
-    thing.pipe(new Indenter({indent}))
+    thing.pipe(new Indenter({indent, firstIndent}))
   else
     if typeof thing is "undefined"
       return indent + "[undefined]"
       #return ""
     else
-      return indent + thing.toString().replace /\n(?!$)/g, "\n#{indent}"
+      return firstIndent + thing.toString().replace /\n(?!$)/g, "\n#{indent}"
 
 getOutput = (proc) ->
   deferred = Q.defer()
@@ -362,12 +363,20 @@ isFileReadable = (path, cb) ->
 isFileWriteable = (path, cb) ->
   checkPermissions(path, 2, cb)
 
-
+toJSON = (obj) ->
+  JSON.stringify obj
+  # JSON.stringify obj, (k,v) ->
+  #   unless v
+  #     v
+  #   else if 'toJSON' of v
+  #     v.toJSON()
+  #   else
+  #     v
 
 module.exports = {consumeStream, isSubClass, getIndent, removeIndent,
   endsWith, startsWith, makeResponse, getOutput, cookCoffee, StringReader,
   indented, Indenter, strip, parseCommand, makeCommand, makeCommandString,
   splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree, makeTree,
   isPosix, mixin, cloneDeep, getUserName, makeDirs, isFileExecutable,
-  isFileReadable, isFileWriteable
+  isFileReadable, isFileWriteable, toJSON
 }

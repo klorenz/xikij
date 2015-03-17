@@ -9,16 +9,16 @@ module.exports =
     console.log "python loader", subject
     return Q(false) unless subject.menuType is "py"
 
-    debugger
+    
 
-    return @xikij.readFile(subject.sourceFile).then (content) =>
+    return @xikij.readFile(subject.fileName).then (content) =>
       content = content.toString()
       if content.match /^#!/
         # execute file for menu args-protocol
         throw new Error "not implemented"
 
       else
-        debugger
+        
         bridge = @xikij.getBridge(subject.menuType)
 
         if bridge?

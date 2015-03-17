@@ -17,8 +17,6 @@ module.exports = (xikij) ->
   path           = require "path"
 
   @run = (request) ->
-    debugger
-
     try
       module = request.path.selectFromObject xikij.packages.getModuleWithSuffix()
     catch error
@@ -30,7 +28,7 @@ module.exports = (xikij) ->
       return @userPackageUpdateMenu({menu, content: request.input, module}).then =>
         new xikij.Action message: "menu #{menu} updated", action: "message", code: 0
 
-    else if module?.sourceFile
-      return @openFile(module.sourceFile)
+    else if module?.fileName
+      return @openFile(module.fileName)
 
     return module

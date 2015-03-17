@@ -46,7 +46,7 @@ describe "Menu", ->
       updated = false
 
       xikij.event.on "package:module-updated", (name, module)->
-        if module.menuName == "amazon" and module.package.name != "xikij"
+        if module.name == "amazon" and module.package.name != "xikij"
           updated = true
 
       waitsForPromise ->

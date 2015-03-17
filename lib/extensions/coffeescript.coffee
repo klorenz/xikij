@@ -9,12 +9,12 @@ module.exports =
     log.log "coffeescript loader", subject
     return Q(false) if subject.menuType != "coffee"
 
-    resolved = require.resolve subject.sourceFile
+    resolved = require.resolve subject.fileName
 
     if resolved of require.cache
       delete require.cache[resolved]
 
-    refined = factory = require subject.sourceFile
+    refined = factory = require subject.fileName
 
     if factory instanceof Function
       refined = factory.call subject, @xikij

@@ -132,7 +132,6 @@ parse = (lines) ->
   s = null
   expect = null
 
-  debugger
   for line in lines
     if expect
       value += "\n#{line}"

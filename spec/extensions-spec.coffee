@@ -26,7 +26,7 @@ describe "extensions", ->
   describe "coffeescript", ->
     it "can load coffeescript extensions", ->
       subject =
-        sourceFile: "#{__dirname}/fixture/packages/xikij-executable/menu/hostname.coffee"
+        fileName: "#{__dirname}/fixture/packages/xikij-executable/menu/hostname.coffee"
         menuType:   "coffee"
 
       promise = coffeeLoader.load.call({xikij}, subject)
@@ -44,7 +44,7 @@ describe "extensions", ->
     it "can load simple executables as extension", ->
       #expect(true).toBe(true)
       subject =
-        sourceFile: "#{__dirname}/fixture/packages/xikij-executable/menu/hello_world.sh"
+        fileName: "#{__dirname}/fixture/packages/xikij-executable/menu/hello_world.sh"
 
       promise = executableLoader.load.call({xikij}, subject)
 
@@ -70,7 +70,7 @@ describe "extensions", ->
     it "does not load normal files as executables", ->
       #expect(true).toBe(true)
       subject =
-        sourceFile: "#{__dirname}/fixture/packages/xikij-executable/menu/hostname.coffee"
+        fileName: "#{__dirname}/fixture/packages/xikij-executable/menu/hostname.coffee"
 
       waitsForPromise ->
         executableLoader.load.call({xikij}, subject).then (result) ->
@@ -95,10 +95,10 @@ describe "extensions", ->
 
         console.log("m", m)
         expect(m.menuType).toBe "coffee"
-        expect(m.sourceFile).toEqual filename
         expect(m.fileName).toEqual filename
         expect(m.moduleName).toBe "xikij-executable/hostname"
-        expect(m.menuName).toBe "hostname"
+        expect(m.type).toBe "menu"
+        expect(m.name).toBe "hostname"
 
         updated = true
 

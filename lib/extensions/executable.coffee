@@ -55,7 +55,7 @@ For extension scripts:
 
         (exit communication after seconds of inactivity, 0 means no timeout)
 
-  - call of program returns JSON or CSON
+  - call of program returns JSON or CSONleam
   -
 
 ###
@@ -70,18 +70,18 @@ module.exports =
     console.log "executable loader", subject
     deferred = Q.defer()
 
-    isFileExecutable subject.sourceFile, (err, is_executable) =>
+    isFileExecutable subject.fileName, (err, is_executable) =>
       if err
         deferred.reject(err)
       else if not is_executable
         deferred.resolve(false)
       else
         subject.doc = () ->
-          @execute(subject.sourceFile, "--help").then (proc) ->
+          @execute(subject.fileName, "--help").then (proc) ->
             getOutput(proc)
 
         subject.run = (request) ->
-          @execute("/bin/bash", subject.sourceFile).then (proc) ->
+          @execute("/bin/bash", subject.fileName).then (proc) ->
             getOutput(proc)
 
         console.log "executable loaded", subject

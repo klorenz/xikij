@@ -12,16 +12,19 @@ module.exports = (Interface, xikij) ->
 
     getContextClass: (args...) -> @dispatch "getContextClass", args
 
+    getPrompts: (args...) -> @dispatch "getPrompts", args
+
   Interface.default class Contexts extends Contexts
 
-    getContexts: (objects) -> Q.fcall =>
-      named = objects?.named? ? false
-      console.log "xikij contexts", xikij._contexts
+    getContexts: (objects) ->
+      xikij.initialized.then =>
+        named = objects?.named? ? false
+        console.log "xikij contexts", xikij._contexts
 
-      if named
-        [name, xikij._context[name]] for name in xikij._contexts
-      else
-        xikij._context[name] for name in xikij._contexts
+        if named
+          [name, xikij._context[name]] for name in xikij._contexts
+        else
+          xikij._context[name] for name in xikij._contexts
 
     addContext: (name, ctx) ->
       if not (name in xikij._contexts)
@@ -29,3 +32,13 @@ module.exports = (Interface, xikij) ->
       xikij._context[name] = ctx
 
     getContextClass: -> Q(xikij.Context)
+
+    getPrompts: -> @getContexts().then (contexts) ->
+      
+      prompts = []
+      for context in contexts
+        x = context::
+        if "PS1" of context::
+          prompts.push context::PS1
+
+      return prompts
