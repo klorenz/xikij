@@ -1,21 +1,19 @@
-levels = [ 'debug', 'dir', 'time', 'timeEnd', 'trace', 'log', 'info', 'warn', 'error' ]
+levels = [ 'debug', 'dir', 'time', 'timeEnd', 'trace', 'log', 'info', 'warn', 'error', 'none' ]
 
 class Logger
   constructor: ({@parent, @name, @level, @prefix}) ->
     @parent = null unless @parent
     @name = "" unless @name
 
-    if typeof @level is "string"
-      @level = levels.indexOf(@level)
-    else
-      @level = -1 if not @level and @level != 0
+    @level = "" if not @level
 
     @setPrefix(@prefix)
 
     @_loggers = {}
 
-  updateLevel: () ->
-    @setLevel(-1) if @level < 0
+  printConfig: ->
+    for name, logger of @_loggers
+      logger.printConfig()
 
   setPrefix: (prefix) ->
     prefix = [] unless prefix?
@@ -23,47 +21,61 @@ class Logger
       prefix = [prefix]
     @prefix = prefix
 
-    @updateFunctions(@level, @prefix)
+    @setLevel(@level)
+
+    #@updateFunctions(@level, @prefix)
 
   setLevel: (level) ->
     @level = level
+    @updateFunctions()
 
-    _level = levels.indexOf(level)
+    for name, logger of @_loggers
+      logger.setLevel(level)
 
-    if _level == -1
-      _level = 0
+  getLevel: () -> @level
+
+  updateFunctions: () ->
+    level = levels.indexOf(@level)
+
+    if level == -1
+      level = 0
       if @parent
-        _level = @parent.getLevel()
+        level = levels.indexOf(@parent.getLevel())
 
-    @updateFunctions(_level, @prefix)
+        if level == -1
+          level = 0
 
-  updateFunctions: (level, prefix) ->
+    prefix = @prefix
+
     for name, i in levels
-      @[name] = ()->
+      @[name] = (args...) ->
+        # console.log "[DUMMY: #{levels[level]}] (#{args})"
+
       if i >= level
         if prefix.length > 4
           throw "prefix must not have more than 4 elements"
 
-        if @prefix.length == 0
-            @[name] = console[name].bind(console, "[#{@name}]")
-        if @prefix.length == 1
-            @[name] = console[name].bind(console, "[#{@name}]", prefix[0])
-        if @prefix.length == 2
-            @[name] = console[name].bind(console, "[#{@name}]", prefix[0], prefix[1])
-        if @prefix.length == 3
-            @[name] = console[name].bind(console, "[#{@name}]", prefix[0], prefix[1], prefix[2])
-        if @prefix.length == 4
-            @[name] = console[name].bind(console, "[#{@name}]", prefix[0], prefix[1], prefix[2], prefix[3])
+        unless name of console
+          console[name] = console.log
 
-    for name, logger of @_loggers
-      logger.updateLevel()
+        if prefix.length == 0
+            @[name] = console[name].bind(console, "[#{name}] [#{@name}]")
+        if prefix.length == 1
+            @[name] = console[name].bind(console, "[#{name}] [#{@name}]", prefix[0])
+        if prefix.length == 2
+            @[name] = console[name].bind(console, "[#{name}] [#{@name}]", prefix[0], prefix[1])
+        if prefix.length == 3
+            @[name] = console[name].bind(console, "[#{name}] [#{@name}]", prefix[0], prefix[1], prefix[2])
+        if prefix.length == 4
+            @[name] = console[name].bind(console, "[#{name}] [#{@name}]", prefix[0], prefix[1], prefix[2], prefix[3])
+
 
   getLogger: (opts) ->
     {name, prefix, level} = opts
     if typeof name is "string"
       name = name.split "."
 
-    if name[0] not in @_loggers
+    if name[0] not of @_loggers
       if @name
         _name = "#{@name}.#{name[0]}"
       else
@@ -79,12 +91,18 @@ class Logger
     else
       if prefix?
         logger.setPrefix(prefix)
-      if level?
-        logger.setLevel(level)
+
+      unless level?
+        if @parent
+          level = @parent.getLevel()
+        else
+          level = "error"
+
+      logger.setLevel(level)
 
       return logger
 
-rootLogger = new Logger level: 4
+rootLogger = new Logger name: "", level: "error"
 
 getLogger = (name, opts) ->
   {prefix, level} = opts or {}

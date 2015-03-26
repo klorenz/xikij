@@ -81,15 +81,22 @@ module.exports = (Interface) ->
 
       console.log "promises", promises
 
-      Q.allSettled(promises).then ->
-        console.log "path", process.env['PATH']
-        console.log "spawn", args[0], args[1..], opts
-        
-        if fs.existsSync(args[0])
-          console.log "exists", args[0]
-        else
-          console.log "not exists", args[0]
-        child_process.spawn args[0], args[1..], opts
+      Q.allSettled(promises)
+        .then ->
+          console.log "path", process.env['PATH']
+          console.log "spawn", args[0], args[1..], opts
+
+          if fs.existsSync(args[0])
+            console.log "exists", args[0]
+          else
+            console.log "not exists", args[0]
+  #          throw "Executable #{args[0]} does not exist"
+
+          child_process.spawn args[0], args[1..], opts
+          # try
+          #   return child_process.spawn args[0], args[1..], opts
+          # catch e
+          #   return e
 
       # if args[0] does not exist, we get a ENOENT error
 
@@ -109,8 +116,9 @@ module.exports = (Interface) ->
       else
         cmd = makeCommand(args)
 
-      switch os.platform()
-        when 'win32'
-          @execute.apply this, ["cmd", "/c", cmd, opts]
-        else
-          @execute.apply this, ["bash", "-c", cmd, opts]
+      @getPlatform().then (platform) =>
+        switch platform
+          when 'win32'
+            @execute.apply this, ["cmd", "/c", cmd, opts]
+          else
+            @execute.apply this, ["bash", "-c", cmd, opts]

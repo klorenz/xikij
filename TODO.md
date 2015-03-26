@@ -83,17 +83,94 @@ retrieved from cache.
 Need a keyboard shortcut to remove a line. ``ctrl+shift+entf`` ?
 Need a keyboard shortcut to remove a line. ``ctrl+entf`` ?
 
+
 ## Quick Open
 
 Need a list of all titles to open a menu entry quickly.
 Maybe from completion?
 Autocomplete-plus extension?
 
+
 ## Newline after entry on collapse
 
 If an entry is collapsed and next line is indented less than entry, insert an
 empty line after collapsed entry.
 
+
 ## on running a command put the cursor right after the output mark
 
 ... then cursor scrolls with output :)
+
+
+## create imap client
+
+```
+    imap://user@host/
+      - INBOX/<search>
+        - <storedsearch>/move/done
+        -      1 | 2015-03-14 12:00 | Kay-Uwe Lorenz <kiw... | Subject is here ...
+        - 100003 |
+      - Sent/
+      - shared.afolder/
+
+    imap/
+      - add account
+        URL: ...
+        ...
+        [submit] [cancel]
+      - remove account
+        - imap://user@....
+        - ...
+      - imap://user@host/
+
+    mail/"""
+      From: <identity>
+      To: recipient
+      Cc:
+      Bcc:
+      Subject: <subject>
+
+      Hello Mr. Foo,
+
+      Sincerly, ...
+
+      --
+      <signature for identity>
+      """
+
+    mail <<
+      From: <identity>
+      To: recipient
+      Cc:
+      Bcc:
+      Subject: <subject>
+
+      Hello Mr. Foo,
+
+      Sincerly, ...
+
+      --
+      <signature for identity>
+
+```
+
+## create password manager
+
+store passwords in a CSON like this (mode 600):
+
+    "imap://user@host": mypass
+    "imap://user@another-host": anotherpass
+
+
+## create commandline interface
+
+Need commandline interface, which manages basic issues
+
+
+## need package interface
+
+```
+xikij package/link
+```
+
+Link a package into .xikij/package folder.

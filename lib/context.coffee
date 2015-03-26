@@ -56,6 +56,7 @@ Context = (context) ->
 
 
     dispatch: (method, args) ->
+      #context = @
       context = @context
       while context
 

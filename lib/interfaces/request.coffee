@@ -1,6 +1,7 @@
 Q = require "q"
 {Response} = require "../response"
 
+console = (require "../logger")("xikij.interface.Request")
 
 module.exports = (Interface, xikij) ->
   Interface.define class Request

@@ -1,3 +1,5 @@
+{join} = require "path"
+
 module.exports = (xikij) ->
   @doc = """
     SSH context enables you to run commands
@@ -6,14 +8,13 @@ module.exports = (xikij) ->
 
   console = xikij.getLogger(@moduleName)
 
-  { getOutput, consumeStream, makeCommand,
-    xikijBridgeScript } = xikij.util
-
+  { getOutput, consumeStream, makeCommand, strip, splitLines
+  } = xikij.util
 
   Q = require "q"
 
   class @SSH extends xikij.Context
-    PATTERN: ///
+    PATTERN: ///^
       ([\w\-]+)  # user
       @
       ([\w\-]+(?:\.[\w\-]+)*) # host
@@ -23,15 +24,19 @@ module.exports = (xikij) ->
     SETTINGS:
       remoteShell: "bash"
 
-    @bridges: {}
-
     does: (request, reqPath) ->
       return false if reqPath.empty()
       reqPath = reqPath.shift() if reqPath.at(0) == ""
 
       return false if reqPath.empty()
 
+
+      ssh_dir         = "~/.ssh/xikij"
+      sockets_dir     = "#{ssh_dir}/sockets"
+      ssh_config_file = "#{ssh_dir}/ssh_config"
+
       if m = reqPath.first().match(@PATTERN)
+        debugger
         [cmd, user, host, port, cwd] = m
         path = reqPath.shift()
         @sshData = {cmd, user, host, port, cwd}
@@ -39,126 +44,136 @@ module.exports = (xikij) ->
         key = "#{user}@#{host}"
         @console = xikij.getLogger(@moduleName, "(#{key})")
 
-        SSH = @constructor
+        cmd = ["ssh", "-F", ssh_config_file ]
 
-        # unless bridge installed, install it
-        unless key of SSH.bridges
-          @console.debug "install bridge"
+        if port
+          cmd = cmd.concat ["-p", port]
+        cmd.push key
 
-          SSH.bridges[key] = null
+        @cmd = cmd
 
-          # copy xikij.py
-          cmd = ["ssh", "-o", "BatchMode yes"]
-          if port
-            cmd = cmd.concat ["-p", port]
-          cmd.push key
+        @makeDirs(sockets_dir)
+        .then =>
+          @exists(ssh_config_file).then (exists) =>
+            unless exists
+              @writeFile(ssh_config_file, """
+                Host *
+                ControlMaster auto
+                ControlPath #{ssh_dir}/sockets/%r@%h:%p
+                ControlPersist 300
+                BatchMode yes
+              """)
+        .then =>
+          true
 
-          @console.debug "basic SSH cmd", cmd
-
-          copyCmd = cmd.concat ["sh", "-c", "cat > .xikijbridge.py"]
-
-          @console.debug "copyCmd", copyCmd
-
-          bridgeScript = xikijBridgeScript()
-
-          @console.debug "will use", bridgeScript
-
-          deferred = Q.defer()
-          SSH.bridges[key] = deferred.promise
-
-          @context.openFile(bridgeScript)
-            .then (stream) =>
-
-              @context.execute(copyCmd...).then (proc) =>
-                stream.pipe(proc.stdin)
-                proc.on "exit", =>
-                  @console.debug "copyCmd cmd", cmd
-
-                  cmdPrefix = cmd.concat ["python"]
-
-                  @console.debug "cmdPrefix", cmdPrefix
-                  data = {
-                    xikijBridge: ".xikijbridge.py",
-                    cmdPrefix:   cmdPrefix,
-                    onExit:      => delete SSH.bridges[key]
-                    }
-                  @console.debug "data", data
-
-                  bridge = new xikij.Bridge data
-
-                  @console.debug "deferred", deferred
-                  # now install the bridge
-                  deferred.resolve bridge
-
-                  @console.debug "promise resolved"
-
-            .fail (error) ->
-              deferred.reject(error)
-
-        @bridge = SSH.bridges[key]
-
-        return true
       else
         return false
 
-    # this method will always be called with instance of this object instance
-    sshBridged: (args...) ->
-      @console.log "sshBridged()", args
+    #ssh: (args...) ->
+      #@dispatch "execute" @cmd.concat(args)
+      #@execute @cmd.concat(args)
 
-      @bridge
-        .then (bridge) =>
-          bridge.request @, args...
+    readDir: (dir) -> # @self 'sshBridged', "readDir", dir
+      @execute("ls", "-p").then (proc) ->
+        getOutput(proc).then (output) ->
+          splitLines strip output
 
-    readDir: (dir) -> @self 'sshBridged', "readDir", dir
+    exists: (filename) ->
+      @execute("bash").then (proc) ->
 
-    exists: (filename) -> @self 'sshBridged', "exists", dir
+        result = getOutput(proc).then (output) ->
+          strip(output) == "y"
 
-    getProjectDirs: -> return []
+        proc.stdin.write('''
+          [ -e '#{filename}' ] && echo "y" || echo "n"
+        ''')
+        proc.stdin.close()
 
-    getSystemDirs: -> return []
+        return result
+
+    getProjectDirs: -> Q.fcall -> []
+
+    getSystemDirs: -> Q.fcall -> []
 
     getCwd: -> Q(@self('sshData')['cwd'] || '.')
 
-    execute: (args...) -> @self('sshBridged') "execute", args...
+    execute: (args...) ->
+      @dispatch "execute", @cmd.concat args
 
-    executeShell: (args...) -> @self('sshBridged') "executeShell", args...
-
-    makeDirs: (dir) -> @self('sshBridged') "makeDirs", dir
+    makeDirs: (dir) ->
+      @self('exists')(dir).then (exists) =>
+        @execute("mkdir", "-p", {stdio: 'ignore'}).then (proc) =>
+          deferred = Q.defer()
+          proc.on "exit", -> deferred.resolve(!exists)
+          deferred.promise
 
     walk: (dir, fileFunc, dirFunc, options) ->
       throw new Error("not implemented")
+
       @self('sshBridged')("walk", dir).then (stream) =>
         stream.on "data", (dir) =>
-      #    ...
-      # @execute("find", root, "-type", "f").then (proc) =filen>
-      #   consumeStream proc.stdout, (result) =>
-      #     for line in splitLines(result)
 
-        # yield line
+    _checkFile: (filename, type) ->
+      @execute("bash").then (proc) ->
 
-    isDirectory: (filename) -> @self('sshBridged') "isDirectory", filename
+        result = getOutput(proc).then (output) ->
+          strip(output) == "y"
+
+        proc.stdin.write('''
+          [ -#{type} '#{filename}' ] && echo "y" || echo "n"
+        ''')
+        proc.stdin.close()
+
+        return result
+
+    isDirectory: (filename) -> @self('_checkFile')(filename, 'd')
+    isExecutable: (filename) -> @self('_checkFile')(filename, 'x')
 
     shellExpand: (name) ->
-      @self('sshBridged') "shellExpand", name
+      @execute("bash", "echo", name).then (proc) ->
+        getOutput(proc).then (output) -> strip(output)
 
-    openFile: (filename) -> @self('sshBridged') "openFile", filename
+    openFile: (filename) ->
+      textFileStreamFactory filename, (filename) =>
+        @execute('cat', filename).then (proc) ->
+          proc.stdout
 
-    readFile: (filename, options) -> @self('sshBridged') "readFile", filename, options
+    readFile: (filename, options) ->
+      if options.count
+        @execute('head', '-c', options.count, filename).then (proc) ->
+          getOutput(proc)
+      else
+        @execute('cat', filename).then (proc) ->
+          getOutput(proc)
 
-    writeFile: (path, content) -> @self('sshBridged') "writeFile", path, content
+    writeFile: (path, content) -> #@self('sshBridged') "writeFile", path, content
+      @execute('bash', '-c', "cat > '#{path}'").then (proc) ->
+        proc.stdin.write(content)
+        proc.stdin.close()
+        proc.on 'exit', (code) =>
+          code
 
     expanded: ->
-      cwd = @sshData['cwd'] || "."
-      @self('sshBridged') "isDirectory", cwd
-        .then (isdir) =>
-          if isdir
-            @self('sshBridged') "readDir", cwd
-          else
-            @self('sshBridged') "readFile", cwd
+      cwd = @self('sshData')['cwd'] || "."
+      @isDirectory(cwd).then (isdir) =>
+        if isdir
+          @readDir(cwd)
+        else
+          @readFile(cwd)
 
-    # on collapse, we can end bridge command
     collapse: ->
-      @self('sshBridged') "exit"
       null
+
+    symLink: (srcpath, dstpath, type) ->
+      throw new Error("not implemented")
+
+    getMTime: (filename) ->
+      throw new Error("not implemented")
+
+    remove: (filename) ->
+      throw new Error("not implemented")
+
+
+
 
   #  exists: (path,

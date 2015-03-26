@@ -1,5 +1,6 @@
 optparse = require 'coffee-script/lib/coffee-script/optparse'
-{XikijClient} = require "./xikij"
+{XikijClient} = require "./client"
+{Response, ResponseHandler} = require "./response"
 
 SWITCHES = [
   ["-s", "--serve",                    "spawn xikij server if not yet running" ]
@@ -12,26 +13,12 @@ SWITCHES = [
 ]
 
 BANNER = '''
-Usage:
-  xikij [options] [ path... ]
-  xikij --serve [options] [path...]
-  xikij --status
+usage: xikij <path>
 
-If you start only a xikij server, then path is not needed.
+Xikij is a xiki clone written in node.  Run `xikij help` for help.
 
-To get more help about xikij itself, run `xikij help`.
-
-Examples:
-
-  To get a list of top level menu items, simply run xikij.
-
-    $ xikij
-
-  Print status of running server.
-
-    $ xikij --status
-
-'''
+Here you find a list of all top level commands, which you can use as <path>:
+\n'''
 
 printLine = (line) ->
   process.stdout.write("#{line}\n")
@@ -39,14 +26,22 @@ printLine = (line) ->
 usage = ->
   printLine (new optparse.OptionParser(SWITCHES, BANNER)).help()
 
+getLogger = require "./logger"
+getLogger().setLevel("warn", propagate: yes)
+
 main = (opts) ->
+  opts = opts || {}
   {argv, stdin, stdout, stderr} = opts
+
+  getLogger().setLevel("warn", propagate: yes)
 
   unless argv?
     argv = process.argv[2..]
 
   optionParser = new optparse.OptionParser(SWITCHES, BANNER)
-  opts = optionParse.parse(argv)
+  opts = optionParser.parse(argv)
+
+#    client.request
 
   unless stdin?
     stdin = process.stdin
@@ -56,8 +51,18 @@ main = (opts) ->
 
   client = new XikijClient()
 
-  client.request(path: opts.arguments.join(" "), input: stdin).then (response) =>
-    stdout.write(response)
+  unless opts.arguments.length
+    stdout.write BANNER
+
+  responseHandler = new ResponseHandler
+    doDefault: (s) -> stdout.write s
+
+  client.request(path: opts.arguments.join(" "), input: stdin)
+  .then (response) =>
+    responseHandler.handleResponse(response)
+
+  .fail (error) =>
+    responseHandler.handleResponse(new Response error)
 
 module.exports =
   run: main

@@ -1,5 +1,7 @@
 Q = require "q"
 
+console = (require "../logger")(name: "xikij.interface.Contexts")
+
 module.exports = (Interface, xikij) ->
   Interface.define class Contexts
     # ### expand
@@ -19,7 +21,7 @@ module.exports = (Interface, xikij) ->
     getContexts: (objects) ->
       xikij.initialized.then =>
         named = objects?.named? ? false
-        console.log "xikij contexts", xikij._contexts
+        console.debug "xikij contexts", xikij._contexts
 
         if named
           [name, xikij._context[name]] for name in xikij._contexts
@@ -34,7 +36,7 @@ module.exports = (Interface, xikij) ->
     getContextClass: -> Q(xikij.Context)
 
     getPrompts: -> @getContexts().then (contexts) ->
-      
+
       prompts = []
       for context in contexts
         x = context::

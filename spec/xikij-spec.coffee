@@ -151,7 +151,7 @@ describe "Xikij", ->
 
       xikij.initialize()
 
-  fdescribe "xikij context", ->
+  describe "xikij context", ->
     it "can list context prompts", ->
       xikij = Xikij()
       waitsForPromise ->
@@ -221,7 +221,8 @@ describe "Xikij", ->
           consumeStream response.data, (result) ->
             expect(result).toBe "#{__dirname}\n"
 
-      it "can run commands via SSH", ->
+      fit "can run commands via SSH", ->
+        debugger
         user = process.env['USER']
         body = """
           #{user}@localhost:#{__dirname}
@@ -277,7 +278,7 @@ describe "Xikij", ->
           body: "./#{path.basename(__filename)}\n  @filepath",
           args: {filePath: __filename}
         }, (response) ->
-          
+
           expect(response.data).toBe __filename
 
       it "can handle menus in directory ../", ->

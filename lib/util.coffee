@@ -157,6 +157,7 @@ getOutput = (proc) ->
     deferred.resolve(result)
   deferred.promise
 
+
 cookCoffee = (content, done) ->
   lines = content.toString().split(/\n/)
   isCoffee = false
@@ -333,6 +334,31 @@ cloneDeep = (source) ->
 
   result
 
+
+textFileStreamFactory = (filename, streamfactory) ->
+
+  class BinaryChecker extends stream.Transform
+     constructor: (@filename) ->
+       super()
+       @first = true
+
+     _transform: (chunk, encoding, done) ->
+       if @first
+         for c,i in chunk
+           if c < 7 or (c > 13 and c < 27) or (c < 32 and c > 27)
+             e = new Error("File is Binary: #{@filename}")
+             e.filename = filename
+             throw e
+
+         @first = false
+       @push chunk
+       done()
+
+  Q.when filename, (filename) ->
+    Q.when streamfactory(filename), (stream) ->
+      stream.pipe(new BinaryChecker(filename))
+
+
 makeDirs = (dir) ->
   dirParts = dir.split("/")
   created = false
@@ -378,5 +404,5 @@ module.exports = {consumeStream, isSubClass, getIndent, removeIndent,
   indented, Indenter, strip, parseCommand, makeCommand, makeCommandString,
   splitLines, xikijBridgeScript, isEmpty, getUserHome, insertToTree, makeTree,
   isPosix, mixin, cloneDeep, getUserName, makeDirs, isFileExecutable,
-  isFileReadable, isFileWriteable, toJSON
+  isFileReadable, isFileWriteable, toJSON, textFileStreamFactory
 }

@@ -122,9 +122,9 @@ Xikij = (opts) ->
 
       log.debug "opts: ", @opts
 
-
       userDir  = @opts.userDir  ? util.getUserHome()
       userBase = @opts.userBase ? ".xikij"
+      @configBase = userBase
 
       @packages.add path.normalize path.join __dirname, ".."
 

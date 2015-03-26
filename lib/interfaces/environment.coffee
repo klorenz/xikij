@@ -1,6 +1,8 @@
 Q          = require "q"
 {promised, getUserName} = require "../util"
 path       = require "path"
+os = require 'os'
+console = (require '../logger')("xikij.interface.Env")
 
 module.exports = (Interface, xikij) ->
   Interface.define class Env
@@ -18,6 +20,7 @@ module.exports = (Interface, xikij) ->
     # this is usually the path of file opened in editor, but also
     # a {Directory} context provides the path of file referenced.
     getFilePath:     (args...) -> @dispatch "getFilePath", args
+    getPlatform:     () -> @dispatch "getPlatform"
 
   Interface.default class Env extends Env
     shellExpand: (s) ->
@@ -49,7 +52,7 @@ module.exports = (Interface, xikij) ->
       else if s.match /^~/
         @getUserDir().then (v) -> v+s[1..]
       else
-        s
+        Q(s)
 
     getUserDir: ->
       deferred = Q.defer()
@@ -112,3 +115,5 @@ module.exports = (Interface, xikij) ->
         process.env
 
     getFilePath: -> Q.fcall -> throw new Error "filename not defined"
+
+    getPlatform: -> Q(os.platform())

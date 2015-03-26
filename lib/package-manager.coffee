@@ -20,7 +20,7 @@ class Package
     @settings = {}
     @errors = null
 
-    @log = getLogger("xikij.Package", prefix: "(#{@name})", level: "debug")
+    @log = getLogger("xikij.Package", prefix: "(#{@name})")
 
   isUserPackage: () ->
     return "user_modules" in @dir

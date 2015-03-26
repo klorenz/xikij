@@ -1,4 +1,4 @@
-{makeDirs, isFileExecutable} = require "../util"
+{makeDirs, isFileExecutable, textFileStreamFactory} = require "../util"
 path   = require 'path'
 os     = require 'os'
 uuid   = require 'uuid'
@@ -104,6 +104,8 @@ module.exports = (Interface, xikij) ->
     cacheFile: (name, content, options) ->
       @tempFile(path.join("cache", name), content, options)
 
+    # create a directory unless it exists. return true if created, else (already
+    # exists) false
     makeDirs: (dir) -> Q(makeDirs(dir))
 
     writeFile: (filename, content, options) ->
@@ -123,24 +125,8 @@ module.exports = (Interface, xikij) ->
 
 
     openFile: (filename) ->
-      class BinaryChecker extends stream.Transform
-        constructor: (@filename) ->
-          super()
-          @first = true
-
-        _transform: (chunk, encoding, done) ->
-          if @first
-            for c,i in chunk
-              if c < 7 or (c > 13 and c < 27) or (c < 32 and c > 27)
-                e = new Error("File is Binary: #{@filename}")
-                e.filename = filename
-                throw e
-
-            @first = false
-          @push chunk
-          done()
-
-      Q.when filename, (filename) -> fs.createReadStream(filename).pipe(new BinaryChecker(filename))
+      debugger
+      textFileStreamFactory filename, fs.createReadStream
 
     readFile: (filename, options) ->
       options = options or {}

@@ -8,6 +8,8 @@ Q          = require "q"
 {Action}   = require "../action"
 {Response} = require "../response"
 
+console = (require "../logger")("xikij.interface.Actions")
+
 module.exports = (Interface) ->
   Interface.define class Actions
     # expand an entry one level

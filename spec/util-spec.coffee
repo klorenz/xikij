@@ -15,7 +15,7 @@ describe "Xiki Utilities", ->
   it "can indent text", ->
     expect(util.indented("foo\nbar\n", "  ")).toBe "  foo\n  bar\n"
 
-  fit "can indent text with special first line", ->
+  it "can indent text with special first line", ->
     expect(util.indented("foo\nbar\n", "  ", "- ")).toBe "- foo\n  bar\n"
 
   it "can remove indentation from text", ->
